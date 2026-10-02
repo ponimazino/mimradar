@@ -234,6 +234,10 @@ select { appearance: none; border: 0; outline: 0; padding: 9px 25px 9px 10px; bo
 .prow .link-mini { display: inline-block; margin-right: 5px; padding: 5px 8px; border-radius: 7px; font-size: 8.5px; font-weight: 800; background: var(--canvas-deep); color: var(--ink-soft); text-decoration: none; white-space: nowrap; }
 .prow .link-mini:hover { color: var(--coral-deep); }
 .pot-head { display: grid; grid-template-columns: 1.5fr .8fr 1.4fr 1fr 1fr .95fr auto; gap: 10px; }
+.th-sort { background: none; padding: 0; border: 0; color: inherit; font: inherit; text-transform: inherit; letter-spacing: inherit; font-weight: inherit; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; text-align: left; }
+.th-sort:hover { color: var(--coral-deep); }
+.th-sort .arr { color: var(--ink-faint); font-size: 8px; display: inline-flex; gap: 1px; }
+.th-sort.active .arr { color: var(--coral-deep); font-weight: 800; }
 
 /* cek CA */
 .verify-input { display: flex; gap: 9px; flex-wrap: wrap; }
@@ -435,6 +439,7 @@ const state = {
   social: { google: [], x: [], biz: [], fetchedAt: {}, errors: [] },
   trending: [], trendSafe: {},
   potential: [], potentialLoading: false, potentialError: '', potentialAge: '60-1440',
+  potSort: [{ k: 'age', dir: 1 }],   // multi-sort: [{k, dir}] — index 0 = prioritas utama
   verify: { loading: false, error: '', token: null, safe: null },
   items: [], found: 0, query: '', removed: 0, searching: false, searchError: '', searched: false,
   safety: {},        // "chain:addr" -> data keamanan (level sudah dihitung)
@@ -720,6 +725,55 @@ function screenerView() {
 }
 
 /* ---------- view: token potensial (aman + muda + topik panas) ---------- */
+// kolom sortable: [id, label, getter nilai, arah default saat pertama diklik]
+const POT_COLS = [
+  ['token', 'Token', t => String(t.symbol || '').toLowerCase(), 1],
+  ['age', 'Umur', t => (t.ageHours ?? 1e9), 1],
+  ['topics', 'Topik panas', t => (t.topics || []).length, -1],
+  ['mc', 'MC / liq', t => (t.mc || t.liq || 0), -1],
+  ['vol', 'Vol / B-S', t => (t.vol24h || 0), -1],
+  ['safe', 'Keamanan', t => ({ good: 0, warning: 1, unknown: 2 }[t.safe && t.safe.level] ?? 2), 1],
+];
+function sortPotential(items) {
+  const getters = Object.fromEntries(POT_COLS.map(c => [c[0], c[2]]));
+  const sorted = [...items].sort((a, b) => {
+    for (const { k, dir } of state.potSort) {
+      const f = getters[k], va = f(a), vb = f(b);
+      if (va < vb) return -1 * dir;
+      if (va > vb) return 1 * dir;
+    }
+    return 0;
+  });
+  return sorted;
+}
+function potSortLabel() {
+  const SUP = ['¹', '²', '³', '⁴', '⁵', '⁶'];
+  return state.potSort.map(({ k, dir }, i) => {
+    const label = (POT_COLS.find(c => c[0] === k) || ['', '?'])[1];
+    return `${label} ${dir === 1 ? '▲' : '▼'}${SUP[i] || ''}`;
+  }).join(' · ');
+}
+function potHeadHtml() {
+  return POT_COLS.map(([id, label]) => {
+    const idx = state.potSort.findIndex(s => s.k === id);
+    const active = idx !== -1;
+    const arrow = !active ? '⇅' : state.potSort[idx].dir === 1 ? '▲' : '▼';
+    const prio = active && idx > 0 ? idx + 1 : '';
+    return `<button class="th-sort ${active ? 'active' : ''}" data-sort="${id}" title="klik: urutkan kolom ini (arah default) · klik lagi: balik arah · shift+klik: hapus dari sorting — bisa beberapa kolom sekaligus">${label}<span class="arr">${arrow}${prio}</span></button>`;
+  }).join('');
+}
+function togglePotSort(id, shift) {
+  const def = (POT_COLS.find(c => c[0] === id) || [])[3] || -1;
+  const idx = state.potSort.findIndex(s => s.k === id);
+  if (shift) {
+    if (idx !== -1) state.potSort.splice(idx, 1);
+  } else if (idx === -1) {
+    state.potSort.push({ k: id, dir: def });
+  } else {
+    state.potSort[idx].dir *= -1;
+  }
+  if (!state.potSort.length) state.potSort = [{ k: 'age', dir: 1 }];
+}
 function potentialRowHtml(t) {
   const topics = (t.topics || []).length
     ? t.topics.map(k => `<span class="topictag">🔥 ${esc(k)}</span>`).join('')
@@ -756,10 +810,10 @@ function potentialView() {
     ['all', 'semua umur (≤ 7 hari)', 0, 10080],
   ];
   const bucket = AGE_BUCKETS.find(b => b[0] === state.potentialAge) || AGE_BUCKETS[3];
-  const shown = state.potential.filter(t => {
+  const shown = sortPotential(state.potential.filter(t => {
     const m = (t.ageHours || 0) * 60;
     return m >= bucket[2] && m < bucket[3];
-  });
+  }));
   const nVerif = shown.filter(t => t.verified !== false).length;
   let body;
   if (state.potentialLoading) body = `<div class="empty-state"><span class="spin"></span><p>memindai token baru &amp; memverifikasi lewat RugCheck/GoPlus…</p></div>`;
@@ -778,9 +832,9 @@ function potentialView() {
   </div>
   <section class="section-block">
     <div class="screener-table clay-card">
-      <div class="table-head pot-head"><span>Token</span><span>Umur</span><span>Topik panas</span><span>MC / liq</span><span>Vol / B-S</span><span>Keamanan</span><span>Aksi</span></div>
+      <div class="table-head pot-head">${potHeadHtml()}<span>Aksi</span></div>
       ${body}
-      <div class="table-footer"><span>${shown.length ? `${shown.length} token dalam rentang umur terpilih · urut paling muda dulu` : 'kandidat: pool baru GeckoTerminal (1-2 menit) + profil/boost terbaru + search topik radar'}</span><span class="text-button">${icon('shield', 13)} gagal guard = disembunyikan</span></div>
+      <div class="table-footer"><span>${shown.length ? `diurut: ${potSortLabel()} <button class="text-button" data-action="reset-sort" style="margin-left:8px">↺ reset</button>` : 'kandidat: pool baru GeckoTerminal (1-2 menit) + profil/boost terbaru + search topik radar'}</span><span class="text-button">${icon('shield', 13)} gagal guard = disembunyikan</span></div>
     </div>
   </section>`;
 }
@@ -922,6 +976,7 @@ function bindEvents() {
     if (action === 'refresh-social') loadSocial(true);
     if (action === 'refresh-trending') loadTrending(true);
     if (action === 'refresh-potential') loadPotential(true);
+    if (action === 'reset-sort') { state.potSort = [{ k: 'age', dir: 1 }]; render(); }
     if (action === 'verify-ca') doVerify();
     if (action === 'paste-clip') {
       navigator.clipboard.readText().then(txt => {
@@ -946,6 +1001,10 @@ function bindEvents() {
   }
   const ca = document.querySelector('#ca');
   if (ca) ca.addEventListener('keydown', e => { if (e.key === 'Enter') doVerify(); });
+  document.querySelectorAll('[data-sort]').forEach(el => el.addEventListener('click', e => {
+    togglePotSort(el.dataset.sort, e.shiftKey);
+    render();
+  }));
   const potAge = document.querySelector('#potAge');
   if (potAge) potAge.addEventListener('change', () => { state.potentialAge = potAge.value; render(); });
 }
