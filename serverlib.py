@@ -15,6 +15,7 @@ Dipakai dari dua pintu:
     `handler` via make_handler(fn) di bawah.
 """
 import html as html_mod
+import inspect
 import json
 import re
 import time
@@ -683,6 +684,10 @@ def api_safety_batch(qs):
 # Vercel Python runtime menjalankan class `handler(BaseHTTPRequestHandler)`
 # per file di api/ — lewat ini satu logika dipakai lokal maupun serverless.
 def make_handler(fn):
+    # sebagian api_* menerima qs (search/safety/...), sebagian tidak
+    # (social/trending/potential) — deteksi lewat signature supaya dua-duanya cocok
+    takes_qs = bool(inspect.signature(fn).parameters)
+
     class ApiHandler(BaseHTTPRequestHandler):
         def log_message(self, fmt, *args):
             pass  # sunyi supaya log Vercel bersih
@@ -690,7 +695,7 @@ def make_handler(fn):
         def do_GET(self):
             qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             try:
-                body, code = fn(qs), 200
+                body, code = (fn(qs) if takes_qs else fn()), 200
             except urllib.error.HTTPError as e:
                 body, code = {"error": f"API upstream error {e.code}"}, 502
             except Exception as e:
