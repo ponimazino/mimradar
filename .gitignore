@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+.vercel/
+tokenly.zip
+node_modules/

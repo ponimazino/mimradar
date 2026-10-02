@@ -1,0 +1,722 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meme Radar</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --plane: #0d0d0d;          /* halaman */
+    --surface: #1a1a19;        /* kartu */
+    --surface-2: #232322;      /* baris hover */
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --ring: rgba(255,255,255,0.10);
+    --accent: #3987e5;         /* biru — aksi utama */
+    --accent-ink: #0d0d0d;
+    --good: #0ca30c;
+    --warning: #fab219;
+    --serious: #ec835a;
+    --critical: #d03b3b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0 0 60px;
+    background: var(--plane); color: var(--ink);
+    font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 20px 16px; }
+
+  header h1 { font-size: 22px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  header p { margin: 0; color: var(--ink-2); }
+  .disclaimer {
+    display: inline-block; margin-top: 10px; padding: 4px 10px; border-radius: 999px;
+    font-size: 12px; color: var(--warning);
+    background: rgba(250,178,25,0.10); border: 1px solid rgba(250,178,25,0.35);
+  }
+
+  .steps { display: flex; gap: 10px; flex-wrap: wrap; margin: 18px 0; }
+  .step {
+    flex: 1 1 220px; background: var(--surface); border: 1px solid var(--ring);
+    border-radius: 10px; padding: 10px 14px; color: var(--ink-2); font-size: 13px;
+  }
+  .step b { color: var(--ink); display: block; margin-bottom: 2px; font-size: 13px; }
+  .step .n {
+    display: inline-flex; width: 20px; height: 20px; border-radius: 50%;
+    background: var(--accent); color: var(--accent-ink);
+    font-weight: 700; font-size: 12px; align-items: center; justify-content: center;
+    margin-right: 8px; vertical-align: 1px;
+  }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--ring);
+    border-radius: 12px; padding: 16px; margin-bottom: 18px;
+  }
+  .card h2 { font-size: 15px; margin: 0 0 4px; }
+  .card .sub { color: var(--muted); font-size: 12px; margin: 0 0 12px; }
+
+  .searchrow { display: flex; gap: 8px; flex-wrap: wrap; }
+  .searchrow input[type=text] {
+    flex: 1 1 320px; padding: 11px 14px; font-size: 15px;
+    background: var(--plane); color: var(--ink);
+    border: 1px solid var(--ring); border-radius: 10px; outline: none;
+  }
+  .searchrow input[type=text]:focus { border-color: var(--accent); }
+  button {
+    cursor: pointer; font: inherit; border: 1px solid var(--ring);
+    background: var(--surface-2); color: var(--ink); border-radius: 10px; padding: 10px 16px;
+  }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 700; }
+  button:hover { filter: brightness(1.12); }
+  button:disabled { opacity: 0.5; cursor: wait; }
+
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0 0; align-items: center; }
+  .chips .lbl { color: var(--muted); font-size: 12px; margin-right: 2px; }
+  .chip {
+    padding: 4px 12px; border-radius: 999px; font-size: 12.5px;
+    background: transparent; border: 1px solid var(--ring); color: var(--ink-2);
+  }
+  .chip:hover { color: var(--ink); }
+
+  .filters { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 14px; align-items: center; }
+  .filters label { color: var(--ink-2); font-size: 12.5px; display: flex; gap: 6px; align-items: center; }
+  .filters select {
+    background: var(--plane); color: var(--ink); border: 1px solid var(--ring);
+    border-radius: 8px; padding: 6px 8px; font: inherit;
+  }
+
+  /* badge status: selalu ikon + label, warna tidak berdiri sendiri */
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600;
+    border: 1px solid; white-space: nowrap;
+  }
+  .b-good { color: var(--good); border-color: rgba(12,163,12,0.45); background: rgba(12,163,12,0.10); }
+  .b-warning { color: var(--warning); border-color: rgba(250,178,25,0.45); background: rgba(250,178,25,0.10); }
+  .b-serious { color: var(--serious); border-color: rgba(236,131,90,0.45); background: rgba(236,131,90,0.10); }
+  .b-critical { color: var(--critical); border-color: rgba(208,59,59,0.45); background: rgba(208,59,59,0.10); }
+  .b-muted { color: var(--muted); border-color: var(--ring); background: transparent; }
+
+  .up { color: var(--good); }
+  .down { color: var(--critical); }
+
+  /* radar social */
+  .socialgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  @media (max-width: 980px) { .socialgrid { grid-template-columns: 1fr; } }
+  .scol h3 {
+    font-size: 11.5px; margin: 0 0 8px; color: var(--muted); font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.03em;
+  }
+  .scol h3 .upd { text-transform: none; font-weight: 400; font-size: 10.5px; letter-spacing: 0; }
+  .scol .note { color: var(--muted); font-size: 11px; margin: 6px 0 0; }
+  /* daftar keyword vertikal — satu baris per keyword, paling baru di atas */
+  .kwlist { display: flex; flex-direction: column; gap: 6px; max-height: 430px; overflow-y: auto; padding-right: 4px; }
+  .chip.row {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; gap: 10px; border-radius: 8px; padding: 6px 10px; text-align: left;
+  }
+  .chip .kwleft { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+  .chip .kwright { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; flex: none; }
+  .chip .kw { cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chip .kw:hover { color: var(--ink); text-decoration: underline; }
+  .chip .meta { color: var(--muted); font-size: 10.5px; white-space: nowrap; }
+  .chip .src { color: var(--muted); font-size: 11px; text-decoration: none; }
+  .chip .src:hover { color: var(--accent); }
+  .newtag {
+    font-size: 9.5px; font-weight: 700; padding: 1px 5px; border-radius: 4px;
+    color: var(--good); background: rgba(12,163,12,0.12); border: 1px solid rgba(12,163,12,0.4);
+  }
+
+  /* trending cards */
+  .tgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+  .tcard {
+    background: var(--plane); border: 1px solid var(--ring); border-radius: 10px;
+    padding: 12px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .tcard .head { display: flex; align-items: center; gap: 8px; }
+  .tcard img {
+    width: 26px; height: 26px; border-radius: 50%; background: var(--surface-2);
+    border: 1px solid var(--ring); flex: none;
+  }
+  .tcard .tname { font-weight: 700; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tcard .tmeta { color: var(--muted); font-size: 11.5px; }
+  .tcard .desc {
+    color: var(--ink-2); font-size: 12px; min-height: 34px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .tcard .row2 { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--ink-2); }
+  .tcard button { padding: 5px 10px; font-size: 12px; border-radius: 8px; }
+
+  /* tabel hasil */
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; min-width: 980px; }
+  th {
+    text-align: left; font-size: 11.5px; color: var(--muted); font-weight: 600;
+    padding: 8px 10px; border-bottom: 1px solid var(--grid);
+    position: sticky; top: 0; background: var(--surface); z-index: 1;
+    text-transform: uppercase; letter-spacing: 0.03em;
+  }
+  td { padding: 9px 10px; border-bottom: 1px solid var(--grid); vertical-align: middle; font-size: 13px; }
+  tbody tr:hover td { background: var(--surface-2); }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .tok { display: flex; align-items: center; gap: 8px; min-width: 190px; }
+  .tok img { width: 26px; height: 26px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--ring); flex: none; }
+  .tok .t { font-weight: 700; }
+  .tok .s { color: var(--muted); font-size: 11.5px; }
+  .chainchip {
+    font-size: 10.5px; padding: 1px 7px; border-radius: 999px;
+    border: 1px solid var(--ring); color: var(--ink-2); text-transform: uppercase;
+  }
+  .link { color: var(--accent); text-decoration: none; font-size: 12px; margin-right: 8px; white-space: nowrap; }
+  .mini { padding: 3px 9px; font-size: 11.5px; border-radius: 7px; }
+  .riskrow td { background: var(--plane); font-size: 12.5px; color: var(--ink-2); padding-top: 2px; padding-bottom: 12px; }
+  .riskrow ul { margin: 4px 0; padding-left: 18px; }
+  .riskrow li { margin: 3px 0; }
+  .riskrow li b { color: var(--ink); }
+  .statline { color: var(--muted); font-size: 12px; margin: 0; }
+  .empty { color: var(--muted); text-align: center; padding: 26px 0; }
+  .spin {
+    display: inline-block; width: 13px; height: 13px; border-radius: 50%;
+    border: 2px solid var(--grid); border-top-color: var(--accent);
+    animation: spin 0.7s linear infinite; vertical-align: -2px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #toast {
+    position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%);
+    background: var(--surface); color: var(--ink); border: 1px solid var(--ring);
+    border-radius: 10px; padding: 10px 18px; font-size: 13px;
+    opacity: 0; pointer-events: none; transition: opacity 0.25s; max-width: 90vw;
+  }
+  #toast.show { opacity: 1; }
+
+  footer { color: var(--muted); font-size: 11.5px; line-height: 1.7; }
+  footer a { color: var(--ink-2); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>🛸 Meme Radar</h1>
+    <p>Query token berdasarkan trend → temukan yang <b>early</b> → cek rug sebelum entry. Untuk strategi in-out cepat, bukan hold panjang.</p>
+    <span class="disclaimer">⚠ Bukan saran finansial — 80% token meme mati &lt; 1 hari. Selalu pakai burner wallet &amp; sizing kecil.</span>
+  </header>
+
+  <div class="steps">
+    <div class="step"><b><span class="n">1</span>Tangkap narasinya EARLY</b>lihat Radar Social di bawah: keyword yang lagi viral di Google Trends / lagi di-spam di 4chan /biz/ — <b>sebelum</b> token-nya ada di dex.</div>
+    <div class="step"><b><span class="n">2</span>Saring yang early</b>Filter umur token &lt; 24 jam + likuiditas cukup. Vol/Liq tinggi = churn aktif, lebih mudah keluar-masuk.</div>
+    <div class="step"><b><span class="n">3</span>Cek rug dulu</b>Tekan "Cek" di tiap baris → skor RugCheck (Solana) / GoPlus (EVM). Ada tanda bahaya = skip, jangan berharap.</div>
+  </div>
+
+  <div class="card">
+    <h2>📡 Radar social — narasi SEBELUM viral</h2>
+    <p class="sub">Sinyal paling awal dari tiga sumber: momen viral dunia (Google Trends), tren X/Twitter, dan kata yang lagi di-spam di lantai shill 4chan /biz/. Otomatis segar tiap 10 menit. Klik keyword → langsung dicari tokennya. <button class="mini" style="padding:2px 10px;font-size:11.5px" onclick="loadSocial()">↻ segarkan</button></p>
+    <div class="socialgrid" id="social">
+      <div class="empty"><span class="spin"></span> memuat radar social…</div>
+    </div>
+    <p class="statline" id="socialerr" style="color:var(--warning)"></p>
+  </div>
+
+  <div class="card">
+    <h2>🔥 Sudah viral di DexScreener — <span style="color:var(--warning)">sinyal TERLAMBAT</span></h2>
+    <p class="sub">Token di sini sudah di-boost (dev bayar biar tampil) = biasanya sudah di fase distribusi. Gunakan untuk konfirmasi momentum &amp; melihat arah narasi — <b>bukan</b> untuk entry early.</p>
+    <div class="tgrid" id="trending"></div>
+  </div>
+
+  <div class="card">
+    <h2>🔍 Query token by trend</h2>
+    <p class="sub">Masukkan kata kunci narasi (bahasa Inggris biasanya lebih tajam: "trump", "musk", "cat", "ai", …).</p>
+    <div class="searchrow">
+      <input type="text" id="q" placeholder="mis. trump, musk, dog, cat, viral moment hari ini..." autofocus>
+      <button class="primary" id="go">Cari token</button>
+    </div>
+    <div class="chips" id="presets">
+      <span class="lbl">Contoh narasi:</span>
+    </div>
+    <div class="filters">
+      <label>Chain:
+        <span id="chains"></span>
+      </label>
+      <label>Umur maks:
+        <select id="maxAgeH">
+          <option value="0">semua</option>
+          <option value="6">&lt; 6 jam</option>
+          <option value="24" selected>&lt; 24 jam</option>
+          <option value="72">&lt; 3 hari</option>
+          <option value="168">&lt; 7 hari</option>
+        </select>
+      </label>
+      <label>Likuiditas min:
+        <select id="minLiq">
+          <option value="0" selected>semua</option>
+          <option value="10000">&gt; $10K</option>
+          <option value="25000">&gt; $25K</option>
+          <option value="50000">&gt; $50K</option>
+          <option value="100000">&gt; $100K</option>
+        </select>
+      </label>
+      <label>Volume 24j min:
+        <select id="minVol">
+          <option value="0">semua</option>
+          <option value="1000" selected>&gt; $1K</option>
+          <option value="10000">&gt; $10K</option>
+          <option value="50000">&gt; $50K</option>
+        </select>
+      </label>
+      <label style="cursor:pointer"><input type="checkbox" id="verifiedOnly" checked> Hanya tampil <b>lolos cek rug</b> ✓ (yang BAHAYA/RISIKO otomatis disembunyikan)</label>
+      <label>Urutkan:
+        <select id="sort">
+          <option value="new">terbaru</option>
+          <option value="vol">volume 24j</option>
+          <option value="liq">likuiditas</option>
+          <option value="mc">market cap</option>
+          <option value="mom">momentum 1 jam</option>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <div class="card" id="resultcard" hidden>
+    <h2 id="resulttitle">Hasil</h2>
+    <p class="sub">Kolom "1j/24j" = perubahan harga. B/S = jumlah buy vs sell 24 jam. Badge keamanan dari RugCheck/GoPlus — tetap cek manual di GMGN/explorer sebelum entry.</p>
+    <div style="margin-bottom:10px"><button id="checkAll" class="mini">Cek rug semua yang tampil (maks 10)</button></div>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Token</th><th class="num">Umur</th><th class="num">MC</th><th class="num">Likuiditas</th>
+            <th class="num">Vol 24j</th><th class="num">1j</th><th class="num">24j</th><th class="num">B/S</th>
+            <th>Keamanan</th><th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <p class="statline" id="statline"></p>
+  </div>
+
+  <footer>
+    Sumber data: <a href="https://trends.google.com" target="_blank">Google Trends</a> (viral mainstream) ·
+    <a href="https://boards.4channel.org/biz/" target="_blank">4chan /biz/</a> (sinyal shill awal) ·
+    <a href="https://dexscreener.com" target="_blank">DexScreener</a> (harga, pair, trending) ·
+    <a href="https://rugcheck.xyz" target="_blank">RugCheck</a> (keamanan Solana) ·
+    <a href="https://gopluslabs.io" target="_blank">GoPlus Security</a> (kontrak EVM) · link trade: GMGN.ai.<br>
+    Harga on-chain bisa delay ±1 menit. Cek "aman" ≠ bebas risiko — soft rug &amp; dump dev tetap mungkin. Jangan pernah sign sembarangan &amp; simpan seed phrase offline.
+  </footer>
+</div>
+<div id="toast"></div>
+
+<script>
+"use strict";
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function fmtUsd(v) {
+  if (v == null) return "–";
+  if (v >= 1e9) return "$" + (v/1e9).toFixed(1) + "B";
+  if (v >= 1e6) return "$" + (v/1e6).toFixed(1) + "M";
+  if (v >= 1e3) return "$" + Math.round(v/1e3) + "K";
+  return "$" + Math.round(v);
+}
+function fmtPct(v) {
+  if (v == null) return "–";
+  const s = v >= 0 ? "+" : "";
+  return `<span class="${v >= 0 ? "up" : "down"}">${s}${v.toFixed(1)}%</span>`;
+}
+function fmtAge(h) {
+  if (h == null) return "–";
+  if (h < 1) return Math.max(1, Math.round(h*60)) + " mnt";
+  if (h < 48) return Math.round(h) + " jam";
+  return Math.round(h/24) + " hari";
+}
+function ageBadge(h) {
+  if (h == null) return "";
+  if (h < 6)  return ` <span class="badge b-good">⚡ &lt;6 jam</span>`;
+  if (h < 24) return ` <span class="badge b-good">⚡ early</span>`;
+  if (h < 72) return ` <span class="badge b-warning">baru</span>`;
+  return ` <span class="badge b-muted">mapan</span>`;
+}
+function toast(msg) {
+  const t = $("#toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(t._tm); t._tm = setTimeout(() => t.classList.remove("show"), 3200);
+}
+async function api(path) {
+  const r = await fetch(path);
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || j.error) throw new Error(j.error || ("HTTP " + r.status));
+  return j;
+}
+
+/* ---------- radar social (sinyal early) ---------- */
+function fmtClock(epoch) {
+  return new Date(epoch * 1000).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+}
+function fmtAgo(epoch) {
+  if (!epoch) return "";
+  const s = Math.max(0, Math.floor(Date.now() / 1000 - epoch));
+  if (s < 60) return "baru saja";
+  if (s < 3600) return Math.floor(s / 60) + " mnt lalu";
+  if (s < 86400) return Math.floor(s / 3600) + " jam lalu";
+  return Math.floor(s / 86400) + " hari lalu";
+}
+function isNewOnRadar(firstSeen) {
+  return firstSeen && Date.now() / 1000 - firstSeen < 1800;  // masuk radar < 30 menit
+}
+// baris keyword: teks = cari token, 🔗 = bukti ke sumber aslinya, BARU = baru masuk radar
+function chipHtml(src, i, kw, meta, url, firstSeen) {
+  return `<span class="chip row" title="${esc(kw)}">
+    <span class="kwleft">
+      <span class="kw" onclick="socialSearch('${src}',${i})">${esc(kw)}</span>
+      ${isNewOnRadar(firstSeen) ? `<span class="newtag">BARU</span>` : ""}
+    </span>
+    <span class="kwright">
+      ${meta ? `<span class="meta">${esc(meta)}</span>` : ""}
+      ${url ? `<a class="src" href="${esc(url)}" target="_blank" rel="noopener" title="bukti di sumber">🔗</a>` : ""}
+    </span>
+  </span>`;
+}
+async function loadSocial() {
+  const el = $("#social");
+  el.innerHTML = `<div class="empty"><span class="spin"></span> memuat radar social…</div>`;
+  $("#socialerr").textContent = "";
+  try {
+    const d = await api("/api/social");
+    window._social = d;
+    const at = d.fetchedAt || {};
+    // urut: paling baru di atas — radar firstSeen utk Google/X, post terakhir utk /biz/
+    const byRadarNewest = (a, b) => (b.firstSeen || 0) - (a.firstSeen || 0);
+    const byMentionNewest = (a, b) => (b.lastSeen || 0) - (a.lastSeen || 0);
+    const googleItems = [...(d.google || [])].sort(byRadarNewest);
+    const xItems = [...(d.x || [])].sort(byRadarNewest);
+    const bizItems = [...(d.biz || [])].sort(byMentionNewest);
+    const g = googleItems.map((t, i) =>
+      chipHtml("google", i, t.title,
+        (t.traffic ? t.traffic + " pencarian" : "") + (isNewOnRadar(t.firstSeen) ? "" : ` · sejak ${fmtClock(t.firstSeen)}`),
+        t.url, t.firstSeen)).join("");
+    const x = xItems.map((t, i) =>
+      chipHtml("x", i, t.word,
+        isNewOnRadar(t.firstSeen) ? "" : `sejak ${fmtClock(t.firstSeen)}`,
+        t.url, t.firstSeen)).join("");
+    const b = bizItems.map((t, i) =>
+      chipHtml("biz", i, t.word,
+        `×${t.count} · ${fmtAgo(t.lastSeen)}`,
+        t.thread ? `https://boards.4channel.org/biz/thread/${t.thread}` : null, t.firstSeen)).join("");
+    el.innerHTML = `
+      <div class="scol">
+        <h3>Momen viral — Google Trends <span class="upd">diperbarui ${at.google ? fmtClock(at.google) : "?"}</span></h3>
+        <div class="kwlist">${g || `<span class="note">tidak ada data</span>`}</div>
+        <p class="note">Urut dari yang paling baru masuk radar. 🔗 = berita pemantiknya. Token meme biasanya lahir beberapa jam SETELAH momen ini.</p>
+      </div>
+      <div class="scol">
+        <h3>Tren X (Twitter) <span class="upd">diperbarui ${at.x ? fmtClock(at.x) : "?"}</span></h3>
+        <div class="kwlist">${x || `<span class="note">tidak ada data</span>`}</div>
+        <p class="note">Urut dari yang paling baru masuk radar. 🔗 = hasil search X untuk tren tsb.</p>
+      </div>
+      <div class="scol">
+        <h3>Sedang di-spam — 4chan /biz/ <span class="upd">diperbarui ${at.biz ? fmtClock(at.biz) : "?"}</span></h3>
+        <div class="kwlist">${b || `<span class="note">tidak ada data</span>`}</div>
+        <p class="note">Urut dari penyebutan post terbaru (paling hidup di atas). ×N = jumlah penyebutan · 🔗 = thread bukti. <b>BARU</b> = baru masuk radar &lt; 30 menit.</p>
+      </div>`;
+    if (d.errors && d.errors.length) $("#socialerr").textContent = d.errors.join(" · ");
+  } catch (e) {
+    el.innerHTML = `<div class="empty">gagal memuat radar social: ${esc(e.message)}</div>`;
+  }
+}
+function socialSearch(src, i) {
+  const d = window._social || {};
+  let kw;
+  if (src === "google") kw = ((d.google || [])[i] || {}).title;
+  else if (src === "x") kw = ((d.x || [])[i] || {}).word;
+  else kw = ((d.biz || [])[i] || {}).word;
+  if (!kw) return;
+  $("#q").value = kw;
+  doSearch();
+  document.getElementById("resultcard").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/* ---------- trending (sinyal terlambat — konfirmasi momentum) ---------- */
+async function loadTrending() {
+  const el = $("#trending");
+  el.innerHTML = `<div class="empty"><span class="spin"></span> memuat trending…</div>`;
+  try {
+    const d = await api("/api/trending");
+    if (!d.items.length) { el.innerHTML = `<div class="empty">belum ada data trending</div>`; return; }
+    // verifikasi keamanan kartu yang tampil (paralel di server, cache 10 menit)
+    const shown = d.items.slice(0, 12);
+    let safeMap = {};
+    try {
+      const spec = shown.map(t => `${t.chain}:${t.address}`).join(",");
+      const b = await api("/api/safety_batch?t=" + encodeURIComponent(spec));
+      safeMap = b.items || {};
+    } catch (e) { /* badge opsional — kartu tetap tampil tanpa badge */ }
+    el.innerHTML = shown.map((t, i) => {
+      const s = safeMap[`${t.chain}:${t.address}`];
+      return `
+      <div class="tcard">
+        <div class="head">
+          ${t.image ? `<img src="${esc(t.image)}" onerror="this.style.visibility='hidden'">` : ""}
+          <div style="min-width:0">
+            <div class="tname">${esc(t.name || t.symbol)}</div>
+            <div class="tmeta"><span class="chainchip">${esc(t.chain)}</span> ${fmtAge(t.ageHours)} · ${fmtUsd(t.mc)}</div>
+          </div>
+        </div>
+        <div class="desc">${esc(t.description || "(tanpa deskripsi)")}</div>
+        <div class="row2"><span>Vol 24j ${fmtUsd(t.vol24h)}</span><span>${fmtPct(t.chg24h)}</span></div>
+        ${s ? `<div>${safetyBadgeHtml(s, false)}</div>` : ""}
+        <button onclick="searchFromTrend(${i})">🔍 cari narasi ini</button>
+      </div>`;
+    }).join("");
+    window._trending = d.items;
+  } catch (e) {
+    el.innerHTML = `<div class="empty">gagal memuat trending: ${esc(e.message)}</div>`;
+  }
+}
+function searchFromTrend(i) {
+  const t = (window._trending || [])[i] || {};
+  $("#q").value = t.name || t.symbol || "";
+  doSearch();
+}
+
+/* ---------- chain filter ---------- */
+const CHAINS = ["solana", "base", "bsc", "ethereum"];
+function renderChains() {
+  $("#chains").innerHTML = CHAINS.map(c =>
+    `<label style="margin-right:6px"><input type="checkbox" value="${c}" checked> ${c}</label>`).join("");
+}
+function selectedChains() {
+  return [...document.querySelectorAll("#chains input:checked")].map(x => x.value).join(",");
+}
+
+/* ---------- search ---------- */
+async function doSearch() {
+  const q = $("#q").value.trim();
+  if (!q) { toast("ketik dulu kata kunci narasinya"); return; }
+  const btn = $("#go");
+  btn.disabled = true; btn.textContent = "mencari…";
+  $("#resultcard").hidden = false;
+  $("#tbody").innerHTML = `<tr><td colspan="10" class="empty"><span class="spin"></span> mencari token "${esc(q)}"…</td></tr>`;
+  try {
+    const p = new URLSearchParams({
+      q, chains: selectedChains(), maxAgeH: $("#maxAgeH").value,
+      minLiq: $("#minLiq").value, minVol: $("#minVol").value, sort: $("#sort").value,
+    });
+    const d = await api("/api/search?" + p);
+    let items = d.items;
+    let removed = 0;
+    if ($("#verifiedOnly").checked && items.length) {
+      $("#tbody").innerHTML = `<tr><td colspan="10" class="empty"><span class="spin"></span> memverifikasi ${items.length} token lewat RugCheck/GoPlus…</td></tr>`;
+      try {
+        const spec = items.map(t => `${t.chain}:${t.address}`).join(",");
+        const b = await api("/api/safety_batch?t=" + encodeURIComponent(spec));
+        const map = b.items || {};
+        items = items.filter(t => {
+          const s = map[`${t.chain}:${t.address}`];
+          if (!s) return true;                       // tak terdata → biarkan user cek manual
+          if (s.level === "critical" || s.level === "serious") return false;  // gagal guard = disembunyikan
+          t._safe = s;
+          return true;
+        });
+        removed = d.items.length - items.length;
+      } catch (e) {
+        toast("verifikasi batch gagal: " + e.message + " — hasil ditampilkan tanpa saringan rug");
+      }
+    }
+    $("#resulttitle").textContent = `Hasil untuk "${q}"`;
+    renderRows(items, d.found ?? d.total);
+    $("#statline").textContent = removed
+      ? `${items.length} dari ${d.total} token lolos cek rug — ${removed} disingkirkan karena ditandai BAHAYA/RISIKO. Klik badge untuk detail risiko.`
+      : `${d.total} token lolos filter (dari semua pair yang cocok). Klik badge keamanan untuk detail risiko.`;
+  } catch (e) {
+    $("#tbody").innerHTML = `<tr><td colspan="10" class="empty">gagal: ${esc(e.message)}</td></tr>`;
+    $("#statline").textContent = "";
+  } finally {
+    btn.disabled = false; btn.textContent = "Cari token";
+  }
+}
+
+function renderRows(items, found = 0) {
+  const tb = $("#tbody");
+  if (!items.length) {
+    tb.innerHTML = found
+      ? `<tr><td colspan="10" class="empty">
+          ada <b>${found}</b> token dengan narasi ini, tapi semuanya tersaring oleh filter umur/likuiditas/volume.<br>
+          <button class="mini" style="margin-top:10px" onclick="relaxFilters()">↕ longgarkan filter &amp; cari lagi</button>
+        </td></tr>`
+      : `<tr><td colspan="10" class="empty">
+          belum ada token dengan narasi ini di dex — narasi biasanya baru "tokenized" beberapa jam <b>setelah</b> momen viralnya.<br>
+          Pantau keyword ini (radar social auto-refresh tiap 10 menit) atau coba kata yang lebih pendek/umum.
+        </td></tr>`;
+    return;
+  }
+  tb.innerHTML = items.map((t, i) => `
+    <tr class="tokenrow" data-i="${i}" data-chain="${esc(t.chain)}" data-addr="${esc(t.address)}">
+      <td><div class="tok">
+        ${t.image ? `<img src="${esc(t.image)}" onerror="this.style.visibility='hidden'">` : ""}
+        <div style="min-width:0">
+          <div class="t">${esc(t.symbol)} <span class="chainchip">${esc(t.chain)}</span></div>
+          <div class="s">${esc(t.name)}</div>
+        </div>
+      </div></td>
+      <td class="num">${fmtAge(t.ageHours)}${ageBadge(t.ageHours)}</td>
+      <td class="num">${fmtUsd(t.mc)}</td>
+      <td class="num">${t.liq ? fmtUsd(t.liq) : `<span title="masih bonding curve (mis. pump.fun) — belum ada pool AMM, tahap paling awal &amp; paling berisiko" style="color:var(--muted)">curve</span>`}</td>
+      <td class="num">${fmtUsd(t.vol24h)}</td>
+      <td class="num">${fmtPct(t.chg1h)}</td>
+      <td class="num">${fmtPct(t.chg24h)}</td>
+      <td class="num">${t.buys24h ?? "–"}/${t.sells24h ?? "–"}</td>
+      <td class="safe">${t._safe ? safetyBadgeHtml(t._safe) : `<button class="mini" onclick="checkSafety(this)">Cek</button>`}</td>
+      <td>
+        ${t.gmgn ? `<a class="link" href="${esc(t.gmgn)}" target="_blank">GMGN</a>` : ""}
+        <a class="link" href="${esc(t.pairUrl)}" target="_blank">DEX</a>
+        <a href="#" class="link" onclick="copyAddr('${esc(t.address)}');return false">CA</a>
+      </td>
+    </tr>`).join("");
+  window._items = items;
+  // tempel data keamanan hasil verifikasi batch supaya badge bisa dibuka detailnya
+  tb.querySelectorAll("tr.tokenrow").forEach(r => {
+    const t = items[+r.dataset.i];
+    if (t && t._safe) r._safety = { d: t._safe, lvl: t._safe.level, detail: safetyDetail(t._safe) };
+  });
+}
+
+// dipakai tombol "longgarkan filter" saat hasil 0 karena tersaring
+function relaxFilters() {
+  $("#maxAgeH").value = "0";
+  $("#minLiq").value = "0";
+  $("#minVol").value = "0";
+  doSearch();
+}
+
+function copyAddr(a) {
+  navigator.clipboard.writeText(a).then(() =>
+    toast("Alamat tersalin — sebelum paste ke wallet, verifikasi karakter awal & akhirnya (anti address-poisoning)"));
+}
+
+/* ---------- safety ---------- */
+const LEVELS = {
+  good:     { cls: "b-good",     icon: "✓", label: "AMAN-ISH" },
+  warning:  { cls: "b-warning",  icon: "⚠", label: "WASPADA" },
+  serious:  { cls: "b-serious",  icon: "▲", label: "RISIKO" },
+  critical: { cls: "b-critical", icon: "✖", label: "BAHAYA" },
+};
+const RANK = { good: 0, warning: 1, serious: 2, critical: 3 };
+
+function worstLevel(risks, fallback) {
+  let lvl = fallback || "good";
+  for (const r of risks || []) {
+    const rl = r.level === "danger" ? "serious"
+             : r.level === "warn" ? "warning"
+             : ["critical","serious","warning","good"].includes(r.level) ? r.level : null;
+    if (rl && RANK[rl] > RANK[lvl]) lvl = rl;
+  }
+  return lvl;
+}
+
+async function checkSafety(btn) {
+  const row = btn.closest("tr");
+  const { chain, addr } = { chain: row.dataset.chain, addr: row.dataset.addr };
+  btn.disabled = true; btn.innerHTML = `<span class="spin"></span>`;
+  try {
+    const d = await api(`/api/safety?chain=${encodeURIComponent(chain)}&address=${encodeURIComponent(addr)}`);
+    renderSafety(row, d);
+  } catch (e) {
+    btn.disabled = false; btn.textContent = "Cek";
+    toast("gagal cek keamanan: " + e.message);
+  }
+}
+
+function safetyDetail(d) {
+  const detail = [];
+  if (d.source === "rugcheck") {
+    detail.push(`RugCheck skor: ${d.scoreNorm ?? "?"}/100 (makin kecil makin baik)`);
+    if (d.lpLockedPct != null) detail.push(`LP terkunci: ${(d.lpLockedPct * 100).toFixed(1)}%`);
+  } else if (d.source === "goplus") {
+    detail.push(`GoPlus: ${d.openSource ? "kode terverifikasi" : "kode tidak terverifikasi"}${d.renounced ? ", ownership renounced" : ""}`);
+    if (d.holders != null) detail.push(`holder: ${d.holders}`);
+  }
+  return detail;
+}
+
+function safetyBadgeHtml(s, interactive = true) {
+  if (!s || !s.level || s.level === "unknown")
+    return `<span class="badge b-muted"${interactive ? ' title="' + esc(s && s.error || "tidak terverifikasi") + '"' : ""}>? n/a</span>`;
+  let cls, label;
+  if (s.level === "good")      { cls = "b-good";     label = "✓ TERVERIFIKASI"; }
+  else if (s.level === "warning") { cls = "b-warning"; label = "⚠ lolos, waspada"; }
+  else { cls = LEVELS[s.level].cls; label = `${LEVELS[s.level].icon} ${LEVELS[s.level].label}`; }
+  return `<span class="badge ${cls}"${interactive ? ' style="cursor:pointer" onclick="toggleRisks(this)"' : ""}>${label}</span>`;
+}
+
+function renderSafety(row, d) {
+  const cell = row.querySelector(".safe");
+  if (d.error && !d.risks) {
+    cell.innerHTML = `<span class="badge b-muted">? n/a</span>`;
+    cell.title = d.error;
+    return;
+  }
+  let lvl, detail;
+  if (d.source === "rugcheck") {
+    const sc = d.scoreNorm;
+    const base = sc == null ? "warning" : sc < 30 ? "good" : sc < 60 ? "warning" : "critical";
+    lvl = worstLevel(d.risks, base);
+  } else {
+    lvl = worstLevel(d.risks, "good");
+  }
+  detail = safetyDetail(d);
+  cell.innerHTML = safetyBadgeHtml({ ...d, level: lvl });
+  row._safety = { d, lvl, detail };
+}
+
+function toggleRisks(badge) {
+  const row = badge.closest("tr");
+  const existing = row.nextElementSibling;
+  if (existing && existing.classList.contains("riskrow")) { existing.remove(); return; }
+  const { d, lvl, detail } = row._safety;
+  const L = LEVELS[lvl];
+  let html = "";
+  if (detail.length) html += `<p class="statline" style="margin-top:0">${detail.map(esc).join(" · ")}</p>`;
+  if (d.risks && d.risks.length) {
+    html += `<ul>` + d.risks.map(r => {
+      const ic = r.level === "danger" ? "▲" : r.level === "critical" ? "✖" : r.level === "warn" ? "⚠" : "•";
+      return `<li><b>${ic} ${esc(r.name)}</b>${r.value ? ` (${esc(r.value)})` : ""}${r.desc ? ` — ${esc(r.desc)}` : ""}</li>`;
+    }).join("") + `</ul>`;
+  } else {
+    html += `<p class="statline">tidak ada red flag mekanis terdeteksi — bukan berarti pasti aman; soft rug tetap lolos scan. ${L.icon} ${L.label}</p>`;
+  }
+  const detailRow = document.createElement("tr");
+  detailRow.className = "riskrow";
+  detailRow.innerHTML = `<td colspan="10">${html}</td>`;
+  row.after(detailRow);
+}
+
+async function checkAll() {
+  const btn = $("#checkAll");
+  btn.disabled = true;
+  const rows = [...document.querySelectorAll("tr.tokenrow")].slice(0, 10);
+  for (const r of rows) {
+    const b = r.querySelector(".safe button");
+    if (b) { await checkSafety(b); await new Promise(res => setTimeout(res, 350)); }
+  }
+  btn.disabled = false;
+}
+
+/* ---------- init ---------- */
+renderChains();
+const PRESETS = ["trump", "musk", "dog", "cat", "pepe", "ai", "banana", "frog"];
+$("#presets").insertAdjacentHTML("beforeend",
+  PRESETS.map(p => `<button class="chip" onclick="$('#q').value='${p}';doSearch()">${p}</button>`).join(""));
+$("#go").addEventListener("click", doSearch);
+$("#q").addEventListener("keydown", e => { if (e.key === "Enter") doSearch(); });
+$("#checkAll").addEventListener("click", checkAll);
+loadSocial();
+loadTrending();
+setInterval(loadSocial, 10 * 60 * 1000);    // radar social tiap 10 menit
+setInterval(loadTrending, 15 * 60 * 1000);  // trending dex tiap 15 menit
+</script>
+</body>
+</html>

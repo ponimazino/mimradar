@@ -1,0 +1,1040 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#f3eee5" />
+<meta name="description" content="Meme Radar — tangkap narasi meme coin sebelum viral, cari token early, cek rug dulu." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<title>Meme Radar · cari token meme early</title>
+<style>
+:root {
+  --canvas: #f3eee5;
+  --canvas-deep: #ece5d9;
+  --surface: #f8f4ed;
+  --surface-2: #eee8de;
+  --ink: #282522;
+  --ink-soft: #79716a;
+  --ink-faint: #a9a199;
+  --coral: #ff6b5f;
+  --coral-deep: #ea5c54;
+  --mint: #45bd9a;
+  --mint-soft: #e0f3ec;
+  --lavender: #a895f3;
+  --lavender-soft: #ece7ff;
+  --amber: #e7a64d;
+  --amber-soft: #fff0d9;
+  --red-soft: #fce4e1;
+  --line: rgba(59, 51, 44, .09);
+  --shadow-up: 10px 10px 22px rgba(190, 179, 164, .5), -8px -8px 18px rgba(255, 253, 249, .92), inset 1px 1px 0 rgba(255, 255, 255, .7);
+  --shadow-small: 5px 5px 12px rgba(190, 179, 164, .42), -4px -4px 10px rgba(255, 253, 249, .86), inset 1px 1px 0 rgba(255, 255, 255, .72);
+  --shadow-pressed: inset 4px 4px 9px rgba(196, 185, 171, .35), inset -3px -3px 7px rgba(255, 255, 255, .72);
+  --radius-xl: 26px;
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
+}
+* { box-sizing: border-box; }
+html { min-width: 320px; background: var(--canvas); }
+body { margin: 0; color: var(--ink); background: var(--canvas); font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-size: 13px; -webkit-font-smoothing: antialiased; }
+button, input, select { font: inherit; }
+button { border: 0; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid rgba(255, 107, 95, .34); outline-offset: 2px; }
+svg { display: block; }
+a { color: inherit; }
+
+.app-shell { min-height: 100vh; display: flex; background: var(--canvas); }
+.sidebar { width: 228px; min-width: 228px; padding: 28px 18px 20px; display: flex; flex-direction: column; background: var(--surface); border-right: 1px solid var(--line); position: relative; z-index: 2; }
+.brand, .mobile-brand { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 800; letter-spacing: -1px; }
+.brand-mark { width: 29px; height: 29px; border-radius: 10px; background: var(--coral); box-shadow: var(--shadow-small); display: flex; align-items: center; justify-content: center; position: relative; transform: rotate(-7deg); flex: none; }
+.brand-mark span { display: block; position: absolute; height: 5px; width: 15px; background: #fff9f0; border-radius: 5px; transform: rotate(-35deg); }
+.brand-mark span:first-child { left: 6px; top: 13px; }
+.brand-mark span:last-child { left: 11px; top: 9px; width: 11px; }
+.live-chip { display: flex; gap: 8px; align-items: center; padding: 10px 11px; margin: 31px 0 28px; border-radius: 13px; background: var(--canvas-deep); box-shadow: var(--shadow-pressed); color: var(--ink-soft); font-size: 11px; font-weight: 700; }
+.pulse-dot { width: 7px; height: 7px; border-radius: 99px; display: inline-block; background: var(--mint); box-shadow: 0 0 0 4px rgba(69, 189, 154, .14); flex: none; }
+.nav-label { padding: 0 11px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 1.2px; font-size: 9px; font-weight: 800; margin-bottom: 10px; }
+.main-nav { display: grid; gap: 5px; }
+.nav-item { height: 41px; width: 100%; border-radius: 12px; padding: 0 11px; display: flex; align-items: center; gap: 11px; color: var(--ink-soft); background: transparent; font-weight: 600; text-align: left; transition: all .18s ease; }
+.nav-item:hover { color: var(--ink); transform: translateX(2px); }
+.nav-item.active { background: var(--surface); color: var(--coral-deep); box-shadow: var(--shadow-small); font-weight: 800; }
+.nav-icon { color: currentColor; display: grid; place-items: center; }
+.nav-count { margin-left: auto; border-radius: 99px; background: var(--lavender-soft); color: #7060c5; min-width: 21px; height: 21px; display: grid; place-items: center; font-size: 10px; }
+.sidebar-bottom { margin-top: auto; }
+.warn-card { border-radius: 17px; padding: 15px; background: var(--ink); color: #fff8ef; box-shadow: 6px 7px 12px rgba(60, 51, 44, .2), inset 1px 1px 0 rgba(255, 255, 255, .12); overflow: hidden; position: relative; }
+.warn-card:after { content: ''; width: 80px; height: 80px; border-radius: 50%; position: absolute; right: -30px; top: -26px; background: var(--amber); opacity: .88; }
+.warn-card p { color: rgba(255, 248, 239, .78); font-size: 10px; line-height: 1.55; margin: 0; position: relative; z-index: 1; }
+.warn-card b { color: #fff; }
+.src-note { color: var(--ink-faint); font-size: 9px; line-height: 1.6; margin-top: 12px; }
+
+.main-content { flex: 1; min-width: 0; padding: 0 38px 60px; max-width: 1560px; margin: 0 auto; width: 100%; }
+.topbar { height: 78px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); gap: 12px; }
+.mobile-brand { display: none; }
+.breadcrumb { display: flex; gap: 10px; align-items: center; color: var(--ink-faint); font-size: 11px; white-space: nowrap; }
+.breadcrumb strong { color: var(--ink); font-weight: 800; }
+.breadcrumb-slash { color: #c7beb5; }
+.topbar-actions { display: flex; align-items: center; gap: 13px; min-width: 0; }
+.search-box { flex: 1; max-width: 340px; height: 36px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface); display: flex; gap: 8px; align-items: center; padding: 0 10px; color: var(--ink-faint); box-shadow: var(--shadow-small); }
+.search-box input { border: 0; outline: 0; width: 100%; min-width: 0; color: var(--ink); background: transparent; font-size: 12px; font-weight: 600; }
+.search-box input::placeholder { color: var(--ink-faint); font-weight: 500; }
+
+.page-header { display: flex; align-items: flex-end; justify-content: space-between; padding: 40px 2px 28px; gap: 18px; flex-wrap: wrap; }
+.eyebrow { color: var(--ink-faint); font-size: 9px; font-weight: 800; letter-spacing: 1.3px; text-transform: uppercase; margin-bottom: 10px; }
+h1, h2, h3, p { margin: 0; }
+h1 { font-size: clamp(26px, 3vw, 38px); line-height: 1.05; letter-spacing: -1.9px; max-width: 640px; }
+.page-header p { color: var(--ink-soft); margin-top: 12px; line-height: 1.6; max-width: 560px; font-size: 12px; }
+h2 { font-size: 18px; letter-spacing: -.75px; line-height: 1.1; }
+.primary-button, .soft-button { border-radius: 12px; padding: 11px 15px; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; font-size: 11px; font-weight: 800; transition: transform .16s ease, box-shadow .16s ease; }
+.primary-button { background: var(--coral); color: #fffaf2; box-shadow: 5px 6px 13px rgba(234, 92, 84, .25), inset 1px 1px 0 rgba(255, 255, 255, .3); }
+.primary-button:hover { transform: translateY(-2px); box-shadow: 5px 8px 15px rgba(234, 92, 84, .32), inset 1px 1px 0 rgba(255, 255, 255, .3); }
+.primary-button:active { transform: translateY(1px); }
+.primary-button:disabled { opacity: .55; cursor: wait; transform: none; }
+.soft-button { color: var(--ink-soft); background: var(--surface); box-shadow: var(--shadow-small); }
+.soft-button:hover { color: var(--ink); transform: translateY(-1px); }
+.text-button { background: transparent; color: var(--coral-deep); display: inline-flex; gap: 6px; align-items: center; font-size: 10px; font-weight: 800; }
+.text-button:hover { color: var(--ink); }
+
+.positive-text { color: var(--mint) !important; }
+.negative-text { color: #df7169 !important; }
+.amber-text { color: var(--amber) !important; }
+
+.clay-card { background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-up); }
+
+/* metric cards (radar) */
+.metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; padding: 10px 0 34px; }
+.metric-card { min-height: 120px; padding: 17px 18px 15px; }
+.metric-top, .metric-footer { display: flex; align-items: center; justify-content: space-between; }
+.metric-top { color: var(--ink-soft); font-size: 10px; font-weight: 700; }
+.metric-icon { width: 27px; height: 27px; border-radius: 9px; display: grid; place-items: center; flex: none; }
+.metric-icon.coral { color: var(--coral-deep); background: var(--red-soft); }
+.metric-icon.mint { color: #329c7f; background: var(--mint-soft); }
+.metric-icon.lavender { color: #7764cf; background: var(--lavender-soft); }
+.metric-icon.amber { color: #bf8131; background: var(--amber-soft); }
+.metric-value { font-size: 26px; font-weight: 800; letter-spacing: -1.3px; line-height: 1; margin: 17px 0 14px; font-variant-numeric: tabular-nums; }
+.metric-footer { font-size: 9px; color: var(--ink-faint); }
+.metric-footer span:first-child { font-weight: 800; }
+
+/* panel radar */
+.section-block { margin-top: 2px; }
+.section-heading { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 18px; gap: 14px; flex-wrap: wrap; }
+.radar-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: start; }
+.radar-panel { padding: 20px; }
+.panel-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 16px; }
+.panel-heading h2 { font-size: 14px; }
+.upd { color: var(--ink-faint); font-size: 9px; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; }
+.kw-list { display: flex; flex-direction: column; gap: 5px; max-height: 470px; overflow-y: auto; padding-right: 4px; }
+.kw-row { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto 26px; gap: 10px; align-items: center; width: 100%; padding: 10px; border-radius: 12px; transition: background .16s ease, transform .16s ease; }
+.kw-row:hover { background: var(--canvas); transform: translateX(2px); }
+.topic-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; box-shadow: 0 0 0 4px rgba(255, 107, 95, .12); flex: none; }
+.topic-dot.coral { background: var(--coral); }
+.topic-dot.lavender { background: var(--lavender); box-shadow: 0 0 0 4px rgba(168, 149, 243, .15); }
+.topic-dot.amber { background: var(--amber); box-shadow: 0 0 0 4px rgba(231, 166, 77, .15); }
+.kw-btn { background: transparent; text-align: left; min-width: 0; padding: 0; }
+.kw-btn strong { display: block; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kw-btn strong:hover { color: var(--coral-deep); text-decoration: underline; }
+.kw-btn span { display: block; margin-top: 4px; color: var(--ink-faint); font-size: 9px; }
+.kw-side { display: flex; align-items: center; gap: 6px; }
+.kw-meta { color: var(--ink-faint); font-size: 9px; font-weight: 700; white-space: nowrap; }
+.newtag { font-size: 8px; font-weight: 800; padding: 2px 6px; border-radius: 5px; color: #2f9f7e; background: var(--mint-soft); }
+.src-link { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 8px; color: var(--ink-faint); background: transparent; }
+.src-link:hover { color: var(--coral-deep); background: var(--canvas-deep); }
+.panel-note { color: var(--ink-faint); border-top: 1px solid var(--line); padding-top: 12px; margin-top: 14px; font-size: 9px; line-height: 1.55; }
+.err-line { color: var(--coral-deep); font-size: 9px; font-weight: 700; margin-top: 10px; }
+.spin { display: inline-block; width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--canvas-deep); border-top-color: var(--coral); animation: spin .7s linear infinite; vertical-align: -2px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* screener */
+.screener-controls { display: flex; flex-direction: column; gap: 13px; margin-bottom: 16px; }
+.searchrow { display: flex; gap: 9px; flex-wrap: wrap; }
+.searchrow input { flex: 1 1 300px; padding: 13px 16px; font-size: 14px; font-weight: 600; background: var(--canvas); color: var(--ink); border: 1px solid var(--line); border-radius: 13px; outline: none; box-shadow: var(--shadow-pressed); }
+.searchrow input:focus { border-color: rgba(255, 107, 95, .4); }
+.chip-row { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
+.chip-lbl { color: var(--ink-faint); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-right: 2px; }
+.chain-chip { padding: 7px 12px; border-radius: 99px; font-size: 10px; font-weight: 700; background: var(--canvas-deep); color: var(--ink-faint); box-shadow: var(--shadow-pressed); transition: all .15s ease; }
+.chain-chip.on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-small); }
+.filter-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+select { appearance: none; border: 0; outline: 0; padding: 9px 25px 9px 10px; border-radius: 10px; background: var(--surface); color: var(--ink-soft); box-shadow: var(--shadow-small); font-size: 10px; font-weight: 700; }
+.select-wrap { position: relative; }
+.select-wrap:after { content: '⌄'; color: var(--ink-faint); position: absolute; right: 10px; top: 8px; pointer-events: none; }
+.verify-toggle { display: inline-flex; align-items: center; gap: 8px; padding: 9px 13px; border-radius: 99px; font-size: 10px; font-weight: 800; background: var(--surface); color: var(--ink-soft); box-shadow: var(--shadow-small); }
+.verify-toggle.on { background: var(--mint-soft); color: #2f9f7e; }
+
+.dashboard-grid { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 20px; align-items: start; }
+.screener-table { overflow: hidden; }
+.table-head, .token-row { display: grid; grid-template-columns: 1.45fr .9fr .9fr 1fr .95fr .95fr 18px; align-items: center; gap: 10px; }
+.table-head { padding: 13px 16px 11px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: .9px; font-size: 8px; font-weight: 800; border-bottom: 1px solid var(--line); }
+.token-row { width: 100%; padding: 12px 16px; text-align: left; background: transparent; border-bottom: 1px solid var(--line); transition: background .16s ease; }
+.token-row:last-child { border-bottom: 0; }
+.token-row:hover, .token-row.selected { background: rgba(255, 255, 255, .53); }
+.token-row.selected { box-shadow: inset 3px 0 0 var(--coral); }
+.token-identity { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.token-avatar { width: 29px; height: 29px; min-width: 29px; display: grid; place-items: center; border-radius: 10px; color: #fff; font-size: 10px; font-weight: 800; box-shadow: 2px 3px 5px rgba(80, 60, 45, .15), inset 1px 1px 0 rgba(255, 255, 255, .35); overflow: hidden; }
+.token-logo { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; display: block; }
+.chain-ic { flex: none; margin: 0 1px -2px 3px; }
+.chain-mini { display: inline-block; padding: 1px 5px; border-radius: 5px; background: var(--canvas-deep); color: var(--ink-soft); font-size: 7.5px; font-weight: 800; letter-spacing: .5px; margin: 0 1px -2px 3px; text-transform: uppercase; }
+.chain-name-ic { display: inline-flex; align-items: center; gap: 4px; }
+.token-avatar.orange { background: #f39b52; } .token-avatar.purple { background: #9782ed; } .token-avatar.gold { background: #e4af4c; } .token-avatar.blue { background: #4d9fd3; } .token-avatar.mint { background: #45bd9a; } .token-avatar.red { background: #ed7c73; }
+.token-identity strong, .token-identity span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.token-identity strong { font-size: 11px; } .token-identity span { margin-top: 3px; color: var(--ink-faint); font-size: 9px; }
+.cell strong, .cell span { display: block; font-variant-numeric: tabular-nums; }
+.cell strong { font-size: 10px; font-weight: 800; } .cell span { margin-top: 3px; font-size: 9px; color: var(--ink-faint); font-weight: 700; }
+.status-bead { width: 7px; height: 7px; border-radius: 50%; display: inline-block; box-shadow: 0 0 0 3px rgba(69, 189, 154, .14); flex: none; }
+.status-bead.positive { background: var(--mint); } .status-bead.neutral { background: var(--amber); box-shadow: 0 0 0 3px rgba(231, 166, 77, .14); } .status-bead.negative { background: #df7169; box-shadow: 0 0 0 3px rgba(223, 113, 105, .14); }
+.pill { justify-self: start; display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border-radius: 8px; font-size: 9px; font-weight: 800; white-space: nowrap; }
+.pill.good { background: var(--mint-soft); color: #2f9f7e; }
+.pill.warn { color: #b47a32; background: var(--amber-soft); }
+.pill.seri { color: var(--coral-deep); background: var(--red-soft); }
+.pill.crit { color: #cc4b45; background: var(--red-soft); }
+.pill.na { color: var(--ink-faint); background: var(--canvas-deep); }
+.safe-cell { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.safe-cell .pill { min-width: 0; }
+.row-chevron { display: grid; place-items: center; color: var(--ink-faint); }
+.table-footer { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(242, 237, 228, .66); color: var(--ink-faint); font-size: 9px; gap: 10px; flex-wrap: wrap; }
+.empty-state { text-align: center; padding: 42px 20px; color: var(--ink-soft); }
+.empty-state p { margin-top: 5px; font-size: 10px; color: var(--ink-faint); line-height: 1.6; }
+.empty-icon { font-size: 28px; color: var(--ink-faint); margin-bottom: 9px; }
+
+/* detail rail */
+.detail-rail { padding: 20px; position: sticky; top: 18px; }
+.detail-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.detail-title-row { display: flex; align-items: center; gap: 10px; }
+.detail-title-row h2 { font-size: 16px; }
+.detail-title-row .sub { color: var(--ink-faint); display: block; margin-top: 4px; font-size: 9px; }
+.close-detail { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 8px; background: var(--canvas-deep); color: var(--ink-faint); font-size: 17px; flex: none; }
+.detail-price { display: flex; align-items: baseline; gap: 9px; padding-top: 18px; flex-wrap: wrap; }
+.detail-price strong { font-size: 25px; letter-spacing: -1.4px; font-variant-numeric: tabular-nums; }
+.detail-price span { font-size: 10px; font-weight: 800; }
+.detail-section { border-bottom: 1px solid var(--line); padding: 16px 0; }
+.detail-section:last-child { border-bottom: 0; }
+.section-kicker { color: var(--ink-faint); text-transform: uppercase; letter-spacing: 1px; font-size: 8px; font-weight: 800; display: flex; justify-content: space-between; margin-bottom: 12px; }
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.stat-grid > div { background: var(--canvas); box-shadow: var(--shadow-pressed); border-radius: 10px; padding: 9px 11px; }
+.stat-grid span { display: block; color: var(--ink-faint); font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; }
+.stat-grid strong { display: block; margin-top: 4px; font-size: 11px; font-variant-numeric: tabular-nums; }
+.risk-list { display: grid; gap: 8px; }
+.risk-list > div { display: grid; grid-template-columns: auto 1fr; gap: 9px; align-items: start; font-size: 9.5px; line-height: 1.45; }
+.risk-ic { font-weight: 800; flex: none; }
+.risk-list b { font-size: 10px; }
+.risk-list small { display: block; color: var(--ink-soft); margin-top: 2px; }
+.detail-note { color: var(--ink-soft); font-size: 10px; line-height: 1.55; }
+.link-row { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 12px; }
+.link-row a, .link-row button { padding: 8px 11px; border-radius: 9px; font-size: 9.5px; font-weight: 800; background: var(--canvas-deep); color: var(--ink-soft); box-shadow: var(--shadow-pressed); text-decoration: none; }
+.link-row a:hover, .link-row button:hover { color: var(--coral-deep); }
+.full-button { width: 100%; justify-content: center; margin-top: 14px; }
+
+/* potensial */
+.prow { display: grid; grid-template-columns: 1.5fr .8fr 1.4fr 1fr 1fr .95fr auto; align-items: center; gap: 10px; width: 100%; padding: 12px 16px; text-align: left; background: transparent; border-bottom: 1px solid var(--line); transition: background .16s ease; }
+.prow:last-child { border-bottom: 0; }
+.prow:hover { background: rgba(255, 255, 255, .53); }
+.prow .age-big { font-size: 12px; font-weight: 800; color: var(--coral-deep); font-variant-numeric: tabular-nums; }
+.prow .age-big span { display: block; margin-top: 3px; font-size: 8px; color: var(--ink-faint); font-weight: 800; text-transform: uppercase; letter-spacing: .5px; }
+.topictag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 99px; font-size: 9px; font-weight: 800; color: var(--coral-deep); background: var(--red-soft); margin: 2px 4px 2px 0; }
+.topics-none { color: var(--ink-faint); font-size: 9px; }
+.prow .link-mini { display: inline-block; margin-right: 5px; padding: 5px 8px; border-radius: 7px; font-size: 8.5px; font-weight: 800; background: var(--canvas-deep); color: var(--ink-soft); text-decoration: none; white-space: nowrap; }
+.prow .link-mini:hover { color: var(--coral-deep); }
+.pot-head { display: grid; grid-template-columns: 1.5fr .8fr 1.4fr 1fr 1fr .95fr auto; gap: 10px; }
+
+/* cek CA */
+.verify-input { display: flex; gap: 9px; flex-wrap: wrap; }
+.verify-input input { flex: 1 1 320px; padding: 14px 16px; font-size: 13px; font-weight: 600; font-family: ui-monospace, monospace; background: var(--canvas); color: var(--ink); border: 1px solid var(--line); border-radius: 13px; outline: none; box-shadow: var(--shadow-pressed); }
+.verify-input input:focus { border-color: rgba(255, 107, 95, .4); }
+.verify-card { padding: 22px; margin-bottom: 18px; }
+.verify-hint { color: var(--ink-faint); font-size: 10px; margin-top: 10px; line-height: 1.6; }
+.verdict { display: flex; align-items: center; gap: 13px; padding: 17px 18px; border-radius: 15px; font-weight: 800; margin-bottom: 16px; }
+.verdict .v-ic { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-size: 19px; flex: none; color: #fff; }
+.verdict.good { background: var(--mint-soft); color: #23806a; } .verdict.good .v-ic { background: var(--mint); }
+.verdict.warning { background: var(--amber-soft); color: #a06f22; } .verdict.warning .v-ic { background: var(--amber); }
+.verdict.serious, .verdict.critical { background: var(--red-soft); color: #c04640; } .verdict.serious .v-ic, .verdict.critical .v-ic { background: #df7169; }
+.verdict.unknown { background: var(--canvas-deep); color: var(--ink-soft); } .verdict.unknown .v-ic { background: var(--ink-faint); }
+.verdict strong { display: block; font-size: 15px; letter-spacing: -.4px; }
+.verdict span { display: block; font-size: 10px; font-weight: 600; margin-top: 3px; line-height: 1.45; }
+
+/* trending */
+.trend-preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
+.trend-card { padding: 17px; text-align: left; transition: transform .18s ease, box-shadow .18s ease; display: flex; flex-direction: column; gap: 10px; }
+.trend-card:hover { transform: translateY(-3px); }
+.trend-card-top { display: flex; align-items: center; gap: 7px; color: var(--ink-faint); font-size: 9px; font-weight: 700; }
+.chainchip { font-size: 8px; padding: 2px 7px; border-radius: 99px; background: var(--canvas-deep); color: var(--ink-soft); text-transform: uppercase; letter-spacing: .6px; font-weight: 800; }
+.trend-time { margin-left: auto; }
+.trend-topic { font-size: 15px; font-weight: 800; letter-spacing: -.5px; }
+.trend-topic .token-avatar { width: 25px; height: 25px; min-width: 25px; }
+.trend-topic > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trend-desc { color: var(--ink-soft); font-size: 10px; line-height: 1.5; min-height: 30px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.trend-metrics { display: flex; align-items: baseline; gap: 7px; }
+.trend-metrics strong { font-size: 16px; letter-spacing: -.8px; font-variant-numeric: tabular-nums; }
+.trend-metrics span { color: var(--ink-faint); font-size: 9px; }
+.trend-metrics b { margin-left: auto; font-size: 10px; font-variant-numeric: tabular-nums; }
+
+.toast { position: fixed; z-index: 10; right: 28px; bottom: 28px; display: flex; gap: 9px; align-items: center; padding: 12px 15px; border-radius: 13px; background: var(--ink); color: #fff8ef; box-shadow: 8px 9px 20px rgba(60, 51, 44, .23); font-size: 10px; font-weight: 700; max-width: min(420px, 84vw); animation: toast-in .22s ease-out; }
+@keyframes toast-in { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.mobile-nav { display: none; }
+
+@media (max-width: 1120px) {
+  .sidebar { width: 202px; min-width: 202px; }
+  .main-content { padding: 0 25px 50px; }
+  .dashboard-grid { grid-template-columns: minmax(0, 1fr) 300px; }
+  .radar-grid { grid-template-columns: 1fr 1fr; }
+  .metric-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 900px) {
+  .sidebar { width: 78px; min-width: 78px; padding: 27px 12px 18px; align-items: center; }
+  .brand { font-size: 0; }
+  .live-chip { width: 35px; height: 35px; padding: 0; justify-content: center; margin: 30px 0 26px; }
+  .live-chip span:not(.pulse-dot) { display: none; }
+  .nav-label, .nav-item > span:not(.nav-icon), .nav-count, .warn-card, .src-note { display: none; }
+  .nav-item { width: 42px; padding: 0; justify-content: center; }
+  .main-content { padding-left: 26px; padding-right: 26px; }
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .detail-rail { position: static; }
+  .radar-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 620px) {
+  body { font-size: 12px; padding-bottom: 64px; }
+  .sidebar { display: none; }
+  .main-content { padding: 0 16px 40px; }
+  .topbar { height: 65px; }
+  .mobile-brand { display: flex; font-size: 18px; }
+  .breadcrumb { display: none; }
+  .page-header { padding: 28px 0 22px; align-items: flex-start; flex-direction: column; }
+  .page-header h1 { font-size: 29px; letter-spacing: -1.5px; }
+  .page-header p { font-size: 11px; margin-top: 10px; }
+  .page-header .primary-button, .page-header .soft-button { align-self: stretch; justify-content: center; }
+  .metric-grid { gap: 10px; padding: 16px 0 30px; }
+  .metric-card { min-height: 104px; padding: 14px; }
+  .metric-value { font-size: 22px; margin: 14px 0 12px; }
+  .section-heading { align-items: flex-start; gap: 14px; flex-direction: column; }
+  .table-head { display: none; }
+  .token-row { grid-template-columns: minmax(130px, 1fr) auto 18px; gap: 8px; padding: 13px 12px; }
+  .prow { grid-template-columns: minmax(140px, 1fr) auto auto; gap: 8px; padding: 13px 12px; }
+  .prow .cell { display: none; }
+  .prow > span:last-child { display: none; }
+  .cell, .safe-cell { display: none; }
+  .row-chevron { grid-column: 3; grid-row: 1; }
+  .table-footer { padding: 11px 12px; }
+  .trend-preview-grid { grid-template-columns: 1fr; }
+  .detail-rail { padding: 16px; }
+  .detail-price strong { font-size: 23px; }
+  .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 63px; background: rgba(248, 244, 237, .96); backdrop-filter: blur(12px); border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(5, 1fr); z-index: 5; padding: 6px 8px 5px; }
+  .mobile-nav .nav-item { width: auto; height: 48px; padding: 4px 0; flex-direction: column; justify-content: center; gap: 4px; border-radius: 10px; font-size: 8px; }
+  .mobile-nav .nav-item > span:not(.nav-icon) { display: block; }
+  .mobile-nav .nav-item.active { box-shadow: none; background: var(--red-soft); }
+  .mobile-nav .nav-item.active .nav-icon { color: var(--coral-deep); }
+  .toast { right: 15px; left: 15px; bottom: 77px; justify-content: center; }
+}
+@media (prefers-reduced-motion: reduce) { *, *:before, *:after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+'use strict';
+
+/* ---------- util ---------- */
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function fmtUsd(v) {
+  if (v == null) return '–';
+  if (v >= 1e9) return '$' + (v / 1e9).toFixed(1) + 'B';
+  if (v >= 1e6) return '$' + (v / 1e6).toFixed(1) + 'M';
+  if (v >= 1e3) return '$' + Math.round(v / 1e3) + 'K';
+  return '$' + Math.round(v);
+}
+function fmtPrice(v) {
+  const n = parseFloat(v);
+  if (isNaN(n)) return '–';
+  if (n >= 1) return '$' + n.toFixed(n < 10 ? 4 : 2);
+  return '$' + n.toPrecision(3);
+}
+function fmtPct(v) {
+  if (v == null) return '<span>–</span>';
+  const cls = v >= 0 ? 'positive-text' : 'negative-text';
+  return `<span class="${cls}">${v >= 0 ? '+' : ''}${v.toFixed(1)}%</span>`;
+}
+function fmtAge(h) {
+  if (h == null) return '–';
+  if (h < 1) return Math.max(1, Math.round(h * 60)) + ' mnt';
+  if (h < 48) return Math.round(h) + ' jam';
+  return Math.round(h / 24) + ' hari';
+}
+function ageTag(h) {
+  if (h == null) return '';
+  if (h < 6) return '⚡ <6 jam';
+  if (h < 24) return '⚡ early';
+  if (h < 72) return 'baru';
+  return 'mapan';
+}
+function fmtClock(epoch) {
+  return new Date(epoch * 1000).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+function fmtAgo(epoch) {
+  if (!epoch) return '';
+  const s = Math.max(0, Math.floor(Date.now() / 1000 - epoch));
+  if (s < 60) return 'baru saja';
+  if (s < 3600) return Math.floor(s / 60) + ' mnt lalu';
+  if (s < 86400) return Math.floor(s / 3600) + ' jam lalu';
+  return Math.floor(s / 86400) + ' hari lalu';
+}
+const isNewOnRadar = (firstSeen) => firstSeen && Date.now() / 1000 - firstSeen < 1800;
+
+async function api(path) {
+  const r = await fetch(path);
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || j.error) throw new Error(j.error || ('HTTP ' + r.status));
+  return j;
+}
+
+/* ---------- ikon ---------- */
+const icon = (name, size = 18) => {
+  const paths = {
+    radar: '<circle cx="12" cy="12" r="8"/><path d="m12 12 6-6M12 4v2M4 12h2M12 18v2M18 12h2"/><circle cx="12" cy="12" r="2"/>',
+    flame: '<path d="M12.5 21c4.3-.3 7.2-3 7.2-7.1 0-3.4-2-6.3-5.2-8.9.1 2-1.1 3.4-2.4 4.3.2-3.2-1.1-6-3.8-8.3.3 4-3.8 6.4-3.8 11 0 4.7 3.3 8.8 8 9Z"/>',
+    search: '<circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/>',
+    arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+    chevron: '<path d="m9 18 6-6-6-6"/>',
+    clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/>',
+    external: '<path d="M14 5h5v5M19 5l-8 8"/><path d="M18 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+    check: '<path d="m4 12 5 5L20 6"/>',
+    shield: '<path d="M12 3 5 6v6c0 4.4 3 7.4 7 9 4-1.6 7-4.6 7-9V6Z"/>',
+  };
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.radar}</svg>`;
+};
+
+/* ---------- state ---------- */
+const CHAINS = ['solana', 'base', 'bsc', 'ethereum'];
+const AVATAR_TONE = { solana: 'mint', base: 'blue', bsc: 'gold', ethereum: 'purple' };
+const AVATAR_BG = { orange: '#f39b52', purple: '#9782ed', gold: '#e4af4c', blue: '#4d9fd3', mint: '#45bd9a', red: '#ed7c73' };
+
+/* logo token dari DexScreener (info.imageUrl); kalau gagal load → fallback letter */
+function avatarHtml(t) {
+  const tone = AVATAR_TONE[t.chain] || 'gold';
+  const letter = String(t.symbol || '?').slice(0, 1);
+  if (!t.image) return `<span class="token-avatar ${tone}">${esc(letter)}</span>`;
+  const fb = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' width='29' height='29'><rect width='29' height='29' rx='10' fill='${AVATAR_BG[tone]}'/><text x='50%' y='55%' font-family='sans-serif' font-size='13' font-weight='800' fill='#fff' text-anchor='middle' dominant-baseline='middle'>${letter}</text></svg>`);
+  return `<span class="token-avatar ${tone}"><img class="token-logo" src="${esc(t.image)}" onerror="this.onerror=null;this.src='${fb}'"/></span>`;
+}
+
+/* simbol chain di sebelah nama token — logo brand, bukan teks */
+const CHAIN_SVG = {
+  solana: `<svg class="chain-ic" width="13" height="13" viewBox="0 0 24 24" fill="#282522"><path d="M6.2 4.5H19.5L16.3 7.7H3Z"/><path d="M7.7 10.4H21L17.8 13.6H4.5Z"/><path d="M4.4 16.3H17.7L14.5 19.5H1.2Z"/></svg>`,
+  base: `<svg class="chain-ic" width="13" height="13" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#0052FF"/><path fill="#fff" d="M12 5.2a6.8 6.8 0 1 0 6.8 6.8h-2.2A4.6 4.6 0 1 1 12 7.4z"/></svg>`,
+  bsc: `<svg class="chain-ic" width="13" height="13" viewBox="0 0 24 24" fill="#F3BA2F"><path d="M12 2.2 15.4 5.6 12 9 8.6 5.6z"/><path d="M5.4 8.8 8.8 12.2 5.4 15.6 2 12.2z"/><path d="M18.6 8.8 22 12.2 18.6 15.6 15.2 12.2z"/><path d="M12 15.4 15.4 18.8 12 22.2 8.6 18.8z"/></svg>`,
+  ethereum: `<svg class="chain-ic" width="13" height="13" viewBox="0 0 24 24"><path fill="#627EEA" d="M12 2 4.5 12.4 12 16.5 19.5 12.4z"/><path fill="#627EEA" opacity=".7" d="M12 22 4.5 13.4 12 15.7z"/><path fill="#627EEA" opacity=".95" d="M12 22 19.5 13.4 12 15.7z"/></svg>`,
+};
+function chainIcon(chain) {
+  return CHAIN_SVG[chain] || `<span class="chain-mini">${esc(String(chain || '?').slice(0, 3).toUpperCase())}</span>`;
+}
+const state = {
+  view: 'radar',
+  q: '',
+  chains: new Set(CHAINS),
+  maxAgeH: '24', minLiq: '0', minVol: '1000', sort: 'new',
+  verifiedOnly: true,
+  social: { google: [], x: [], biz: [], fetchedAt: {}, errors: [] },
+  trending: [], trendSafe: {},
+  potential: [], potentialLoading: false, potentialError: '',
+  verify: { loading: false, error: '', token: null, safe: null },
+  items: [], found: 0, query: '', removed: 0, searching: false, searchError: '', searched: false,
+  safety: {},        // "chain:addr" -> data keamanan (level sudah dihitung)
+  selected: -1,
+  toast: '',
+};
+const LEVELS = { good: ['good', '✓ TERVERIFIKASI'], warning: ['warn', '⚠ waspada'], serious: ['seri', '▲ RISIKO'], critical: ['crit', '✖ BAHAYA'] };
+const RANK = { good: 0, warning: 1, serious: 2, critical: 3 };
+
+function worstLevel(d) {
+  if (d.error && !(d.risks || []).length) return 'unknown';
+  let lvl = 'good';
+  if (d.source === 'rugcheck') {
+    const sc = d.scoreNorm;
+    lvl = sc == null ? 'warning' : sc < 30 ? 'good' : sc < 60 ? 'warning' : 'critical';
+  }
+  for (const r of d.risks || []) {
+    const rl = { danger: 'serious', warn: 'warning' }[r.level] || (RANK[r.level] != null ? r.level : null);
+    if (rl && RANK[rl] > RANK[lvl]) lvl = rl;
+  }
+  return lvl;
+}
+
+function safetyPill(s) {
+  if (!s) return `<span class="pill na">? n/a</span>`;
+  if (!s.level) s.level = worstLevel(s);
+  if (s.level === 'unknown') return `<span class="pill na" title="${esc(s.error || '')}">? n/a</span>`;
+  const [cls, label] = LEVELS[s.level];
+  return `<span class="pill ${cls}" title="klik baris untuk detail risiko">${label}</span>`;
+}
+function beadClass(level) {
+  if (level === 'good') return 'positive';
+  if (level === 'warning' || level === 'unknown' || !level) return 'neutral';
+  return 'negative';
+}
+function safetyDetail(d) {
+  const out = [];
+  if (d.source === 'rugcheck') {
+    out.push(`RugCheck skor: ${d.scoreNorm ?? '?'}/100 (kecil = baik)`);
+    if (d.lpLockedPct != null) out.push(`LP terkunci: ${(d.lpLockedPct * 100).toFixed(1)}%`);
+  } else if (d.source === 'goplus') {
+    out.push(`GoPlus: ${d.openSource ? 'kode terverifikasi' : 'kode tidak terverifikasi'}${d.renounced ? ', renounced' : ''}`);
+    if (d.holders != null) out.push(`holder: ${d.holders}`);
+  }
+  return out;
+}
+const key = (t) => `${t.chain}:${t.address}`;
+
+function toast(msg) {
+  state.toast = msg; render();
+  clearTimeout(toast._tm);
+  toast._tm = setTimeout(() => { state.toast = ''; render(); }, 3000);
+}
+
+/* ---------- shell ---------- */
+const VIEW_LABEL = { radar: 'Radar social', screener: 'Cari token', potential: 'Token potensial', verify: 'Cek CA', trending: 'Trending dex' };
+function navItem(view, label, iconName, count) {
+  const c = count != null ? `<span class="nav-count">${count}</span>` : '';
+  return `<button class="nav-item ${state.view === view ? 'active' : ''}" data-view="${view}"><span class="nav-icon">${icon(iconName, 18)}</span><span>${label}</span>${c}</button>`;
+}
+function appShell(content) {
+  const baru = (state.social.google || []).filter(t => isNewOnRadar(t.firstSeen)).length +
+    (state.social.x || []).filter(t => isNewOnRadar(t.firstSeen)).length +
+    (state.social.biz || []).filter(t => isNewOnRadar(t.firstSeen)).length;
+  return `<div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand"><div class="brand-mark"><span></span><span></span></div><span>meme radar</span></div>
+      <div class="live-chip"><span class="pulse-dot"></span><span>Auto · 10 mnt</span></div>
+      <div class="nav-label">Workspace</div>
+      <nav class="main-nav">
+        ${navItem('radar', 'Radar social', 'radar', baru || null)}
+        ${navItem('potential', 'Token potensial', 'shield')}
+        ${navItem('screener', 'Cari token', 'search')}
+        ${navItem('verify', 'Cek CA', 'check')}
+        ${navItem('trending', 'Trending dex', 'flame')}
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="warn-card"><p><b>⚠ Bukan saran finansial.</b> 80% token meme mati &lt; 1 hari. Selalu pakai burner wallet, sizing kecil, dan jangan sign sembarangan. "✓ terverifikasi" ≠ bebas rug — soft rug lolos scan.</p></div>
+        <p class="src-note">Data: DexScreener · RugCheck · GoPlus · Google Trends · trends24.in · 4chan /biz/</p>
+      </div>
+    </aside>
+    <main class="main-content">
+      <header class="topbar">
+        <div class="mobile-brand"><div class="brand-mark"><span></span><span></span></div><span>meme radar</span></div>
+        <div class="breadcrumb"><span>Radar</span><span class="breadcrumb-slash">/</span><strong>${VIEW_LABEL[state.view]}</strong></div>
+        <div class="topbar-actions">
+          <div class="search-box">${icon('search', 16)}<input id="global-search" value="${esc(state.q)}" placeholder="Cari token by narasi… mis. storm, ufc, cat" aria-label="Cari token by narasi"/></div>
+        </div>
+      </header>
+      ${content}
+    </main>
+    <nav class="mobile-nav">${navItem('radar', 'Radar', 'radar')}${navItem('potential', 'Potensial', 'shield')}${navItem('screener', 'Cari', 'search')}${navItem('verify', 'Cek CA', 'check')}${navItem('trending', 'Trend', 'flame')}</nav>
+  </div>`;
+}
+function pageHeader(eyebrow, title, description, action) {
+  return `<div class="page-header"><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1><p>${description}</p></div>${action || ''}</div>`;
+}
+
+/* ---------- view: radar social ---------- */
+function kwRowHtml(src, i, kw, meta, url, firstSeen) {
+  const dot = src === 'google' ? 'coral' : src === 'x' ? 'lavender' : 'amber';
+  return `<div class="kw-row">
+    <span class="topic-dot ${dot}"></span>
+    <button class="kw-btn" data-kw="${src}:${i}" title="cari token narasi ini"><strong>${esc(kw)}</strong><span>${esc(meta.sub || '')}</span></button>
+    <span class="kw-side">${isNewOnRadar(firstSeen) ? '<span class="newtag">BARU</span>' : ''}<span class="kw-meta">${esc(meta.side || '')}</span></span>
+    ${url ? `<a class="src-link" href="${esc(url)}" target="_blank" rel="noopener" title="bukti di sumber aslinya">${icon('external', 13)}</a>` : '<span></span>'}
+  </div>`;
+}
+function radarPanel(title, note, rows, updatedAt) {
+  return `<div class="radar-panel clay-card">
+    <div class="panel-heading">
+      <div><div class="eyebrow">${title}</div><h2>Paling baru di atas</h2></div>
+      <span class="upd">${icon('clock', 12)} diperbarui ${updatedAt ? fmtClock(updatedAt) : '?'}</span>
+    </div>
+    <div class="kw-list">${rows || '<div class="empty-state"><div class="empty-icon">⌕</div><strong>tidak ada data</strong></div>'}</div>
+    <p class="panel-note">${note}</p>
+  </div>`;
+}
+function radarView() {
+  const at = state.social.fetchedAt || {};
+  const byRadarNewest = (a, b) => (b.firstSeen || 0) - (a.firstSeen || 0);
+  const g = [...(state.social.google || [])].sort(byRadarNewest).map((t, i) =>
+    kwRowHtml('google', i, t.title,
+      { sub: t.traffic ? t.traffic + ' pencarian' : '', side: isNewOnRadar(t.firstSeen) ? '' : 'sejak ' + fmtClock(t.firstSeen) },
+      t.url, t.firstSeen)).join('');
+  const x = [...(state.social.x || [])].sort(byRadarNewest).map((t, i) =>
+    kwRowHtml('x', i, t.word,
+      { side: isNewOnRadar(t.firstSeen) ? '' : 'sejak ' + fmtClock(t.firstSeen) },
+      t.url, t.firstSeen)).join('');
+  const b = [...(state.social.biz || [])].sort((a2, b2) => (b2.lastSeen || 0) - (a2.lastSeen || 0)).map((t, i) =>
+    kwRowHtml('biz', i, t.word,
+      { sub: 'spam hidup ' + fmtAgo(t.lastSeen), side: '×' + t.count },
+      t.thread ? 'https://boards.4channel.org/biz/thread/' + t.thread : null, t.firstSeen)).join('');
+  const baru = (state.social.google || []).filter(t => isNewOnRadar(t.firstSeen)).length +
+    (state.social.x || []).filter(t => isNewOnRadar(t.firstSeen)).length +
+    (state.social.biz || []).filter(t => isNewOnRadar(t.firstSeen)).length;
+  const errs = (state.social.errors || []).length ? `<p class="err-line">${esc(state.social.errors.join(' · '))}</p>` : '';
+  return `${pageHeader('Sinyal early · sebelum token ada',
+    'Tangkap narasi sebelum viral.',
+    'Keyword yang lagi panas di Google Trends, X, dan 4chan /biz/ — biasanya beberapa jam SEBELUM tokennya muncul di dex. Klik keyword untuk langsung mencari tokennya; ikon ↗ membuka bukti di sumber aslinya.',
+    `<button class="soft-button" data-action="refresh-social">${icon('radar', 15)} Segarkan radar</button>`)}
+  <div class="metric-grid">
+    <div class="metric-card clay-card"><div class="metric-top"><span>Google Trends</span><span class="metric-icon coral">${icon('search', 15)}</span></div><div class="metric-value">${(state.social.google || []).length}</div><div class="metric-footer"><span>momen viral</span><span>diperbarui ${at.google ? fmtClock(at.google) : '?'}</span></div></div>
+    <div class="metric-card clay-card"><div class="metric-top"><span>X / Twitter</span><span class="metric-icon lavender">${icon('flame', 15)}</span></div><div class="metric-value">${(state.social.x || []).length}</div><div class="metric-footer"><span>tren AS</span><span>diperbarui ${at.x ? fmtClock(at.x) : '?'}</span></div></div>
+    <div class="metric-card clay-card"><div class="metric-top"><span>4chan /biz/</span><span class="metric-icon amber">${icon('flame', 15)}</span></div><div class="metric-value">${(state.social.biz || []).length}</div><div class="metric-footer"><span>kata di-spam</span><span>diperbarui ${at.biz ? fmtClock(at.biz) : '?'}</span></div></div>
+    <div class="metric-card clay-card"><div class="metric-top"><span>Baru masuk radar</span><span class="metric-icon mint">${icon('clock', 15)}</span></div><div class="metric-value">${baru}</div><div class="metric-footer"><span>&lt; 30 menit</span><span>narasi baru terbentuk</span></div></div>
+  </div>
+  <section class="section-block"><div class="radar-grid">
+    ${radarPanel('Google Trends', 'Momen mainstream — token meme biasanya lahir beberapa jam SETELAH momen ini. Frasa panjang boleh dipangkas di kotak pencarian.', g, at.google)}
+    ${radarPanel('X / Twitter', 'Hashtag/nama yang paling banyak di-tweet di X sekarang — scraping via trends24.in.', x, at.x)}
+    ${radarPanel('4chan /biz/', '×N = jumlah penyebutan · "spam hidup" = post terakhir yang menyebutnya. <b>BARU</b> = keyword baru masuk radar &lt; 30 menit — narasi yang baru mulai terbentuk. Ini lantai shill paling awal.', b, at.biz)}
+  </div>${errs}</section>`;
+}
+
+/* ---------- view: screener ---------- */
+function chainChipsHtml() {
+  return `<div class="chip-row"><span class="chip-lbl">Chain</span>` + CHAINS.map(c =>
+    `<button class="chain-chip ${state.chains.has(c) ? 'on' : ''}" data-chain="${c}">${c}</button>`).join('') + `</div>`;
+}
+function filterRowHtml() {
+  return `<div class="filter-row">
+    <label class="select-wrap"><select id="maxAgeH">
+      ${[['0', 'umur: semua'], ['6', 'umur < 6 jam'], ['24', 'umur < 24 jam'], ['72', 'umur < 3 hari'], ['168', 'umur < 7 hari']].map(([v, l]) => `<option value="${v}" ${state.maxAgeH === v ? 'selected' : ''}>${l}</option>`).join('')}
+    </select></label>
+    <label class="select-wrap"><select id="minLiq">
+      ${[['0', 'likuiditas: semua'], ['10000', 'liq > $10K'], ['25000', 'liq > $25K'], ['50000', 'liq > $50K'], ['100000', 'liq > $100K']].map(([v, l]) => `<option value="${v}" ${state.minLiq === v ? 'selected' : ''}>${l}</option>`).join('')}
+    </select></label>
+    <label class="select-wrap"><select id="minVol">
+      ${[['0', 'volume: semua'], ['1000', 'vol > $1K'], ['10000', 'vol > $10K'], ['50000', 'vol > $50K']].map(([v, l]) => `<option value="${v}" ${state.minVol === v ? 'selected' : ''}>${l}</option>`).join('')}
+    </select></label>
+    <label class="select-wrap"><select id="sort">
+      ${[['new', 'urut: terbaru'], ['vol', 'urut: vol 24j'], ['liq', 'urut: likuiditas'], ['mc', 'urut: market cap'], ['mom', 'urut: momentum 1j']].map(([v, l]) => `<option value="${v}" ${state.sort === v ? 'selected' : ''}>${l}</option>`).join('')}
+    </select></label>
+    <button class="verify-toggle ${state.verifiedOnly ? 'on' : ''}" data-action="toggle-verify">${state.verifiedOnly ? '✓ hanya lolos cek rug' : 'saringan rug OFF'}</button>
+  </div>`;
+}
+function tokenRowHtml(t, i) {
+  const s = state.safety[key(t)];
+  const bead = s ? `<span class="status-bead ${beadClass(s.level)}"></span>` : '';
+  return `<button class="token-row ${state.selected === i ? 'selected' : ''}" data-token="${i}">
+    <span class="token-identity">
+      ${avatarHtml(t)}
+      <span><strong>${esc(t.symbol)}${chainIcon(t.chain)}</strong><span>${esc(t.name || '')}</span></span>
+    </span>
+    <span class="cell"><strong>${fmtPrice(t.priceUsd)}</strong><span>${fmtPct(t.chg24h)}</span></span>
+    <span class="cell"><strong>${fmtAge(t.ageHours)}</strong><span>${ageTag(t.ageHours)}</span></span>
+    <span class="cell"><strong>${fmtUsd(t.mc)}</strong><span>${t.liq ? 'liq ' + fmtUsd(t.liq) : 'curve'}</span></span>
+    <span class="cell"><strong>${fmtUsd(t.vol24h)}</strong><span>${t.buys24h ?? '–'}/${t.sells24h ?? '–'} B/S</span></span>
+    <span class="safe-cell">${bead}${safetyPill(s)}</span>
+    <span class="row-chevron">${icon('chevron', 16)}</span>
+  </button>`;
+}
+function riskListHtml(s) {
+  if (!s) return `<p class="detail-note">memuat data keamanan…</p>`;
+  const detail = safetyDetail(s);
+  if (s.error && !(s.risks || []).length) return `<p class="detail-note">${esc(s.error)}</p>`;
+  let html = detail.length ? `<p class="detail-note" style="margin-bottom:10px">${detail.map(esc).join(' · ')}</p>` : '';
+  if ((s.risks || []).length) {
+    html += `<div class="risk-list">` + s.risks.map(r => {
+      const ic = r.level === 'critical' ? '<span class="risk-ic negative-text">✖</span>' : r.level === 'danger' ? '<span class="risk-ic amber-text">▲</span>' : r.level === 'warn' ? '<span class="risk-ic amber-text">⚠</span>' : '<span class="risk-ic">•</span>';
+      return `<div>${ic}<span><b>${esc(r.name)}</b>${r.value ? ` <span class="amber-text">(${esc(r.value)})</span>` : ''}${r.desc ? `<small>${esc(r.desc)}</small>` : ''}</span></div>`;
+    }).join('') + `</div>`;
+  } else {
+    html += `<p class="detail-note">tidak ada red flag mekanis terdeteksi — bukan berarti pasti aman; soft rug tetap lolos scan.</p>`;
+  }
+  return html;
+}
+function detailRailHtml() {
+  const t = state.items[state.selected];
+  if (!t) return '';
+  const s = state.safety[key(t)];
+  return `<aside class="detail-rail clay-card">
+    <div class="detail-heading">
+      <div class="detail-title-row">
+        ${avatarHtml(t)}
+        <div><h2>${esc(t.symbol)}${chainIcon(t.chain)}</h2><span class="sub">${esc(t.name || '')}</span></div>
+      </div>
+      <button class="close-detail" data-action="close-detail">×</button>
+    </div>
+    <div class="detail-price"><strong>${fmtPrice(t.priceUsd)}</strong><span>1j ${fmtPct(t.chg1h)}</span><span>24j ${fmtPct(t.chg24h)}</span></div>
+    <div class="detail-section">
+      <div class="section-kicker">Statistik pair ${t.dexId ? '<span>' + esc(t.dexId) + '</span>' : ''}</div>
+      <div class="stat-grid">
+        <div><span>Umur</span><strong>${fmtAge(t.ageHours)} · ${ageTag(t.ageHours)}</strong></div>
+        <div><span>Market cap</span><strong>${fmtUsd(t.mc)}</strong></div>
+        <div><span>Likuiditas</span><strong>${t.liq ? fmtUsd(t.liq) : 'curve (bonding)'}</strong></div>
+        <div><span>Volume 24j</span><strong>${fmtUsd(t.vol24h)}</strong></div>
+        <div><span>Buy / Sell 24j</span><strong>${t.buys24h ?? '–'} / ${t.sells24h ?? '–'}</strong></div>
+        <div><span>Pair dibuat</span><strong>${t.created ? new Date(t.created).toLocaleString('id-ID') : '–'}</strong></div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="section-kicker">Keamanan <span>${s ? safetyPill(s) : 'memuat…'}</span></div>
+      ${riskListHtml(s)}
+    </div>
+    <div class="detail-section">
+      <div class="section-kicker">Aksi</div>
+      <div class="link-row">
+        ${t.gmgn ? `<a href="${esc(t.gmgn)}" target="_blank" rel="noopener">GMGN ↗</a>` : ''}
+        <a href="${esc(t.pairUrl)}" target="_blank" rel="noopener">DexScreener ↗</a>
+        <button data-action="copy-ca" data-addr="${esc(t.address)}">Copy CA</button>
+      </div>
+      <p class="detail-note" style="margin-top:12px">Sebelum entry: verifikasi karakter awal &amp; akhir alamat di wallet (anti address-poisoning). Cek manual holder &amp; dev wallet di GMGN.</p>
+    </div>
+  </aside>`;
+}
+function resultsHtml() {
+  if (state.searching) return `<div class="empty-state"><span class="spin"></span><p>${state.searchStep || 'mencari…'}</p></div>`;
+  if (state.searchError) return `<div class="empty-state"><div class="empty-icon">!</div><strong>gagal</strong><p>${esc(state.searchError)}</p></div>`;
+  if (!state.searched) return `<div class="empty-state"><div class="empty-icon">⌕</div><strong>Belum ada pencarian.</strong><p>Ketik kata kunci narasi di atas, atau klik keyword di Radar social.</p></div>`;
+  if (!state.items.length) {
+    if (state.found) return `<div class="empty-state"><div class="empty-icon">⌕</div><strong>Ada ${state.found} token narasi ini — tapi semua tersaring filter.</strong><p>Umur/likuiditas/volume terlalu ketat. <button class="text-button" data-action="relax">↕ longgarkan filter &amp; cari lagi</button></p></div>`;
+    return `<div class="empty-state"><div class="empty-icon">⌕</div><strong>Belum ada token dengan narasi ini.</strong><p>Narasi biasanya baru "tokenized" beberapa jam SETELAH momen viral — pantau keyword ini di radar, atau coba kata yang lebih pendek/umum.</p></div>`;
+  }
+  return state.items.map((t, i) => tokenRowHtml(t, i)).join('');
+}
+function screenerView() {
+  return `${pageHeader('Pencarian narasi',
+    'Cari token by narasi.',
+    'Masukkan keyword dari radar (atau dari kepalamu), filter yang early, dan wajib lolos cek rug sebelum entry.',
+    '')}
+  <div class="screener-controls clay-card" style="padding:18px">
+    <div class="searchrow">
+      <input type="text" id="q" value="${esc(state.q)}" placeholder="mis. storm, ufc, cat, kejadian viral hari ini…"/>
+      <button class="primary-button" data-action="search">${icon('search', 15)} Cari token</button>
+    </div>
+    ${chainChipsHtml()}
+    ${filterRowHtml()}
+  </div>
+  <div class="dashboard-grid">
+    <div class="screener-panel">
+      <div class="screener-table clay-card">
+        <div class="table-head"><span>Token</span><span>Harga / 24j</span><span>Umur</span><span>MC / liq</span><span>Vol / B-S</span><span>Keamanan</span><span></span></div>
+        <div>${resultsHtml()}</div>
+        <div class="table-footer">
+          <span>${state.searched && !state.searching ? (state.removed ? `${state.items.length} dari ${state.found} token lolos cek rug — ${state.removed} disingkirkan (BAHAYA/RISIKO).` : `${state.items.length} token lolos filter (dari ${state.found} yang cocok narasi).`) : 'klik baris token untuk detail + risiko'}</span>
+          ${state.items.length ? `<span class="text-button">klik baris → detail &amp; risiko ${icon('arrow', 13)}</span>` : ''}
+        </div>
+      </div>
+    </div>
+    ${state.selected >= 0 ? detailRailHtml() : `<aside class="detail-rail clay-card"><div class="empty-state"><div class="empty-icon">◎</div><strong>Detail token.</strong><p>Klik salah satu baris hasil untuk melihat statistik, rincian risiko RugCheck/GoPlus, dan link trade.</p></div></aside>`}
+  </div>`;
+}
+
+/* ---------- view: token potensial (aman + muda + topik panas) ---------- */
+function potentialRowHtml(t) {
+  const topics = (t.topics || []).length
+    ? t.topics.map(k => `<span class="topictag">🔥 ${esc(k)}</span>`).join('')
+    : `<span class="topics-none">—</span>`;
+  const ageH = t.ageHours;
+  const ageCls = ageH != null && ageH < 6 ? '⚡ <6 jam' : ageH != null && ageH < 24 ? '⚡ early' : 'baru';
+  return `<div class="prow">
+    <span class="token-identity">
+      ${avatarHtml(t)}
+      <span><strong>${esc(t.symbol)}${chainIcon(t.chain)}</strong><span>${esc(t.name || '')}</span></span>
+    </span>
+    <span class="age-big">${fmtAge(ageH)}<span>${ageCls}</span></span>
+    <span>${topics}</span>
+    <span class="cell"><strong>${fmtUsd(t.mc)}</strong><span>${t.liq ? 'liq ' + fmtUsd(t.liq) : 'curve'}</span></span>
+    <span class="cell"><strong>${fmtUsd(t.vol24h)}</strong><span>${t.buys24h ?? '–'}/${t.sells24h ?? '–'} B/S</span></span>
+    <span class="safe-cell">${safetyPill(t.safe)}</span>
+    <span>
+      ${t.gmgn ? `<a class="link-mini" href="${esc(t.gmgn)}" target="_blank" rel="noopener">GMGN</a>` : ''}
+      <a class="link-mini" href="${esc(t.pairUrl)}" target="_blank" rel="noopener">DEX</a>
+      <button class="link-mini" data-action="copy-ca" data-addr="${esc(t.address)}">CA</button>
+    </span>
+  </div>`;
+}
+function potentialView() {
+  let body;
+  if (state.potentialLoading) body = `<div class="empty-state"><span class="spin"></span><p>memindai token baru &amp; memverifikasi lewat RugCheck/GoPlus…</p></div>`;
+  else if (state.potentialError) body = `<div class="empty-state"><div class="empty-icon">!</div><strong>gagal memuat</strong><p>${esc(state.potentialError)}</p></div>`;
+  else if (!state.potential.length) body = `<div class="empty-state"><div class="empty-icon">⌕</div><strong>Belum ada yang lolos.</strong><p>Belum ada token baru yang lolos verifikasi rug saat ini — coba segarkan beberapa menit lagi; token baru lahir tiap jam.</p></div>`;
+  else body = state.potential.map(potentialRowHtml).join('');
+  return `${pageHeader('Aman · muda · early',
+    'Token potensial, sudah terverifikasi.',
+    'Token paling baru yang MELEWATI cek rug (RugCheck/GoPlus level aman/waspada), diurut paling muda dulu untuk early entry. Tag 🔥 menandai token yang namanya berkaitan dengan topik yang lagi panas di radar.',
+    `<button class="soft-button" data-action="refresh-potential">${icon('radar', 15)} Segarkan</button>`)}
+  <section class="section-block">
+    <div class="screener-table clay-card">
+      <div class="table-head pot-head"><span>Token</span><span>Umur</span><span>Topik panas</span><span>MC / liq</span><span>Vol / B-S</span><span>Keamanan</span><span>Aksi</span></div>
+      ${body}
+      <div class="table-footer"><span>${state.potential.length ? `${state.potential.length} token lolos verifikasi · urut paling muda dulu` : 'kandidat: token profil/boost terbaru + hasil search topik radar'}</span><span class="text-button">${icon('shield', 13)} wajib lolos cek rug</span></div>
+    </div>
+  </section>`;
+}
+
+/* ---------- view: cek CA (verifikasi sebelum entry) ---------- */
+const VERDICT = {
+  good: ['good', '✓', 'LOLOS — aman-ish untuk entry kecil', 'Tidak ada red flag mekanis dari RugCheck/GoPlus. Bukan bebas risiko — cek holder & dev wallet manual di GMGN sebelum entry.'],
+  warning: ['warning', '⚠', 'WASPADA — ada catatan', 'Lolos scan tapi ada penanda serius ringan. Baca detail risiko di bawah dan putuskan dengan sizing kecil.'],
+  serious: ['serious', '▲', 'RISIKO SERIUS — disarankan skip', 'Ada red flag signifikan pada kontrak/token. Kalau tetap masuk, anggap dana hilang.'],
+  critical: ['critical', '✖', 'BAHAYA — jangan entry', 'Scan menemukan indikasi scam (honeypot / pembatasan jual / skor rug ekstrem). Jangan beli token ini.'],
+  unknown: ['unknown', '?', 'TIDAK BISA DIVERIFIKASI OTOMATIS', 'Chain token ini belum didukung cek otomatis (RugCheck = Solana, GoPlus = ETH/BSC/Base/Polygon/Arbitrum). Verifikasi manual via explorer & GMGN.'],
+};
+function verifyView() {
+  const v = state.verify;
+  let result = '';
+  if (v.loading) result = `<div class="empty-state"><span class="spin"></span><p>mendeteksi chain &amp; memverifikasi…</p></div>`;
+  else if (v.error) result = `<div class="empty-state"><div class="empty-icon">!</div><strong>gagal</strong><p>${esc(v.error)}</p></div>`;
+  else if (v.token) {
+    const t = v.token, s = v.safe || {};
+    const level = s.level || 'unknown';
+    const [vcls, vic, vtitle, vsub] = VERDICT[level] || VERDICT.unknown;
+    result = `
+      <div class="verdict ${vcls}">
+        <span class="v-ic">${vic}</span>
+        <span><strong>${vtitle}</strong><span>${vsub}</span></span>
+      </div>
+      <div class="detail-rail clay-card" style="position:static;max-width:520px">
+        <div class="detail-heading">
+          <div class="detail-title-row">
+            ${avatarHtml(t)}
+            <div><h2>${esc(t.symbol)}${chainIcon(t.chain)}</h2><span class="sub">${esc(t.name || '')}</span></div>
+          </div>
+          ${safetyPill(s)}
+        </div>
+        <div class="detail-price"><strong>${fmtPrice(t.priceUsd)}</strong><span>1j ${fmtPct(t.chg1h)}</span><span>24j ${fmtPct(t.chg24h)}</span></div>
+        <div class="detail-section">
+          <div class="section-kicker">Statistik pair ${t.dexId ? '<span>' + esc(t.dexId) + '</span>' : ''}</div>
+          <div class="stat-grid">
+            <div><span>Umur</span><strong>${fmtAge(t.ageHours)} · ${ageTag(t.ageHours)}</strong></div>
+            <div><span>Market cap</span><strong>${fmtUsd(t.mc)}</strong></div>
+            <div><span>Likuiditas</span><strong>${t.liq ? fmtUsd(t.liq) : 'curve (bonding)'}</strong></div>
+            <div><span>Volume 24j</span><strong>${fmtUsd(t.vol24h)}</strong></div>
+            <div><span>Buy / Sell 24j</span><strong>${t.buys24h ?? '–'} / ${t.sells24h ?? '–'}</strong></div>
+            <div><span>Pair dibuat</span><strong>${t.created ? new Date(t.created).toLocaleString('id-ID') : '–'}</strong></div>
+          </div>
+        </div>
+        <div class="detail-section">
+          <div class="section-kicker">Rincian risiko</div>
+          ${riskListHtml(s)}
+        </div>
+        <div class="detail-section">
+          <div class="section-kicker">Aksi</div>
+          <div class="link-row">
+            ${t.gmgn ? `<a href="${esc(t.gmgn)}" target="_blank" rel="noopener">GMGN ↗</a>` : ''}
+            <a href="${esc(t.pairUrl)}" target="_blank" rel="noopener">DexScreener ↗</a>
+            <button data-action="copy-ca" data-addr="${esc(t.address)}">Copy CA</button>
+          </div>
+        </div>
+      </div>`;
+  } else result = `<div class="empty-state"><div class="empty-icon">⌕</div><strong>Tempel contract address untuk diverifikasi.</strong><p>Chain terdeteksi otomatis — Solana (base58) maupun EVM (0x…). Boleh juga tempel URL GMGN/DexScreener lengkap.</p></div>`;
+  return `${pageHeader('Satu pintu sebelum entry',
+    'Cek CA dulu, baru entry.',
+    'Tempel contract address token mana pun: kami cari pair-nya di dex, cek keamanan lewat RugCheck (Solana) / GoPlus (EVM), dan beri verdict jelas.',
+    '')}
+  <div class="clay-card verify-card">
+    <div class="verify-input">
+      <input type="text" id="ca" placeholder="Tempel CA di sini — mis. 6p6...gGmE atau 0x4b2f… atau URL GMGN" spellcheck="false"/>
+      <button class="soft-button" data-action="paste-clip">📋 Tempel</button>
+      <button class="primary-button" data-action="verify-ca" ${v.loading ? 'disabled' : ''}>${icon('shield', 15)} Verifikasi</button>
+    </div>
+    <p class="verify-hint">Verifikasi = RugCheck / GoPlus + data pair DexScreener. "Lolos" berarti tidak ada red flag mekanis (honeypot, pajak makan, LP tak terkunci) — soft rug &amp; dump dev tetap harus dicek manual di GMGN.</p>
+  </div>
+  ${result}`;
+}
+
+/* ---------- view: trending (sinyal terlambat) ---------- */
+function trendingView() {
+  const cards = state.trending.map((t, i) => {
+    const s = state.trendSafe[key(t)];
+    return `<div class="trend-card clay-card">
+      <div class="trend-card-top"><span>${fmtAge(t.ageHours)}</span><span>${fmtUsd(t.mc)}</span><span class="trend-time">${fmtUsd(t.vol24h)} vol</span></div>
+      <div class="trend-topic chain-name-ic">${avatarHtml(t)}<span style="min-width:0">${esc(t.name || t.symbol)}${chainIcon(t.chain)}</span></div>
+      <div class="trend-desc">${esc(t.description || '(tanpa deskripsi)')}</div>
+      <div class="trend-metrics"><strong>${fmtUsd(t.vol24h)}</strong><span>vol 24j</span><b>${fmtPct(t.chg24h)}</b></div>
+      ${s ? `<div>${safetyPill(s)}</div>` : ''}
+      <button class="soft-button" data-trend-search="${i}" style="align-self:flex-start">${icon('search', 13)} cari narasi ini</button>
+    </div>`;
+  }).join('');
+  return `${pageHeader('Sinyal TERLAMBAT · konfirmasi momentum',
+    'Sudah viral di DexScreener.',
+    'Token di-boost = dev bayar biar tampil = biasanya sudah fase distribusi. Pakai untuk membaca arah narasi &amp; konfirmasi momentum — bukan untuk entry early. Badge tetap menandai mana yang lolos cek rug.',
+    `<button class="soft-button" data-action="refresh-trending">${icon('radar', 15)} Segarkan</button>`)}
+  <section class="section-block"><div class="trend-preview-grid">${cards || '<div class="empty-state"><span class="spin"></span><p>memuat trending…</p></div>'}</div></section>`;
+}
+
+/* ---------- render & events ---------- */
+function render() {
+  const content = state.view === 'screener' ? screenerView() : state.view === 'potential' ? potentialView() : state.view === 'verify' ? verifyView() : state.view === 'trending' ? trendingView() : radarView();
+  document.querySelector('#app').innerHTML = appShell(content) + (state.toast ? `<div class="toast">${icon('check', 15)} ${esc(state.toast)}</div>` : '');
+  bindEvents();
+}
+function bindEvents() {
+  document.querySelectorAll('[data-view]').forEach(el => el.addEventListener('click', () => { state.view = el.dataset.view; state.selected = -1; render(); }));
+  document.querySelectorAll('[data-kw]').forEach(el => el.addEventListener('click', () => {
+    const [src, i] = el.dataset.kw.split(':');
+    const d = state.social;
+    const kw = src === 'google' ? ((d.google || [])[+i] || {}).title : src === 'x' ? ((d.x || [])[+i] || {}).word : ((d.biz || [])[+i] || {}).word;
+    if (kw) { state.q = kw; doSearch(); }
+  }));
+  document.querySelectorAll('[data-trend-search]').forEach(el => el.addEventListener('click', () => {
+    const t = state.trending[+el.dataset.trendSearch];
+    if (t) { state.q = t.name || t.symbol || ''; doSearch(); }
+  }));
+  document.querySelectorAll('[data-token]').forEach(el => el.addEventListener('click', () => {
+    state.selected = +el.dataset.token;
+    const t = state.items[state.selected];
+    if (t && !state.safety[key(t)]) fetchSafety(t);
+    render();
+  }));
+  document.querySelectorAll('[data-chain]').forEach(el => el.addEventListener('click', () => {
+    const c = el.dataset.chain;
+    state.chains.has(c) ? state.chains.delete(c) : state.chains.add(c);
+    render();
+  }));
+  document.querySelectorAll('[data-action]').forEach(el => el.addEventListener('click', () => {
+    const action = el.dataset.action;
+    if (action === 'search') doSearch();
+    if (action === 'toggle-verify') { state.verifiedOnly = !state.verifiedOnly; if (state.searched) doSearch(); else render(); }
+    if (action === 'relax') { state.maxAgeH = '0'; state.minLiq = '0'; state.minVol = '0'; doSearch(); }
+    if (action === 'refresh-social') loadSocial(true);
+    if (action === 'refresh-trending') loadTrending(true);
+    if (action === 'refresh-potential') loadPotential(true);
+    if (action === 'verify-ca') doVerify();
+    if (action === 'paste-clip') {
+      navigator.clipboard.readText().then(txt => {
+        const input = document.querySelector('#ca');
+        if (input) { input.value = (txt || '').trim(); if (input.value) doVerify(); }
+      }).catch(() => toast('clipboard tidak bisa dibaca browser — tempel manual (Ctrl+V)'));
+    }
+    if (action === 'close-detail') { state.selected = -1; render(); }
+    if (action === 'copy-ca') {
+      navigator.clipboard.writeText(el.dataset.addr).then(() => toast('Alamat tersalin — verifikasi karakter awal & akhirnya sebelum paste (anti poisoning)'));
+    }
+  }));
+  const q1 = document.querySelector('#global-search');
+  if (q1) q1.addEventListener('keydown', e => { if (e.key === 'Enter') { state.q = e.target.value.trim(); doSearch(); } });
+  const q2 = document.querySelector('#q');
+  if (q2) {
+    q2.addEventListener('keydown', e => { if (e.key === 'Enter') { state.q = e.target.value.trim(); doSearch(); } });
+    ['maxAgeH', 'minLiq', 'minVol', 'sort'].forEach(id => {
+      const sel = document.querySelector('#' + id);
+      if (sel) sel.addEventListener('change', () => { state[id] = sel.value; if (state.searched) doSearch(); });
+    });
+  }
+  const ca = document.querySelector('#ca');
+  if (ca) ca.addEventListener('keydown', e => { if (e.key === 'Enter') doVerify(); });
+}
+
+async function doVerify() {
+  const input = document.querySelector('#ca');
+  const raw = (input ? input.value : '').trim();
+  if (!raw) { toast('tempel dulu contract address-nya'); return; }
+  state.verify = { loading: true, error: '', token: null, safe: null };
+  render();
+  try {
+    const d = await api('/api/verify?address=' + encodeURIComponent(raw));
+    state.verify = { loading: false, error: '', token: d.token, safe: d.safe };
+  } catch (e) {
+    state.verify = { loading: false, error: e.message, token: null, safe: null };
+  }
+  render();
+}
+
+/* ---------- data ---------- */
+async function loadSocial(explicit) {
+  try {
+    const d = await api('/api/social');
+    state.social = d;
+  } catch (e) {
+    state.social.errors = [e.message];
+  }
+  if (state.view === 'radar' || explicit) render();
+}
+async function loadTrending(explicit) {
+  try {
+    const d = await api('/api/trending');
+    state.trending = d.items || [];
+    const spec = state.trending.map(t => key(t)).join(',');
+    if (spec) {
+      try {
+        const b = await api('/api/safety_batch?t=' + encodeURIComponent(spec));
+        Object.assign(state.safety, b.items || {});
+        state.trendSafe = b.items || {};
+      } catch (e) { state.trendSafe = {}; }
+    }
+  } catch (e) {
+    state.trending = [];
+  }
+  if (state.view === 'trending' || explicit) render();
+}
+async function loadPotential(explicit) {
+  if (state.potentialLoading) return;
+  state.potentialLoading = true;
+  state.potentialError = '';
+  if (state.view === 'potential' || explicit) render();
+  try {
+    const d = await api('/api/potential');
+    state.potential = d.items || [];
+  } catch (e) {
+    state.potentialError = e.message;
+    state.potential = [];
+  } finally {
+    state.potentialLoading = false;
+    if (state.view === 'potential' || explicit) render();
+  }
+}
+async function fetchSafety(t) {
+  try {
+    const d = await api(`/api/safety?chain=${encodeURIComponent(t.chain)}&address=${encodeURIComponent(t.address)}`);
+    d.level = worstLevel(d);
+    state.safety[key(t)] = d;
+    if (state.view === 'screener' && state.selected >= 0) render();
+  } catch (e) { /* diam — pill tetap n/a */ }
+}
+async function doSearch() {
+  const q = state.q.trim();
+  if (!q) { toast('ketik dulu kata kunci narasinya'); return; }
+  state.view = 'screener';
+  state.selected = -1;
+  state.searching = true;
+  state.searchError = '';
+  state.searchStep = `mencari token "${q}"…`;
+  render();
+  try {
+    const p = new URLSearchParams({
+      q, chains: [...state.chains].join(','), maxAgeH: state.maxAgeH,
+      minLiq: state.minLiq, minVol: state.minVol, sort: state.sort,
+    });
+    const d = await api('/api/search?' + p);
+    let items = d.items || [];
+    let removed = 0;
+    if (state.verifiedOnly && items.length) {
+      state.searchStep = `memverifikasi ${items.length} token lewat RugCheck/GoPlus…`;
+      render();
+      try {
+        const spec = items.map(t => key(t)).join(',');
+        const b = await api('/api/safety_batch?t=' + encodeURIComponent(spec));
+        Object.assign(state.safety, b.items || {});
+        items = items.filter(t => {
+          const s = (b.items || {})[key(t)];
+          if (!s) return true;
+          return s.level !== 'critical' && s.level !== 'serious';
+        });
+        removed = (d.items || []).length - items.length;
+      } catch (e) {
+        toast('verifikasi batch gagal — hasil ditampilkan tanpa saringan rug');
+      }
+    }
+    state.items = items;
+    state.found = d.found ?? d.total ?? 0;
+    state.query = q;
+    state.removed = removed;
+    state.searched = true;
+  } catch (e) {
+    state.searchError = e.message;
+    state.items = [];
+  } finally {
+    state.searching = false;
+    render();
+  }
+}
+
+/* ---------- init ---------- */
+loadSocial(true).then(() => { loadTrending(false); loadPotential(false); });
+setInterval(() => loadSocial(false), 10 * 60 * 1000);
+setInterval(() => loadTrending(false), 15 * 60 * 1000);
+setInterval(() => loadPotential(false), 15 * 60 * 1000);
+</script>
+</body>
+</html>
