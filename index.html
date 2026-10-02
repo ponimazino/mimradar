@@ -725,7 +725,7 @@ function potentialRowHtml(t) {
     ? t.topics.map(k => `<span class="topictag">🔥 ${esc(k)}</span>`).join('')
     : `<span class="topics-none">—</span>`;
   const ageH = t.ageHours;
-  const ageCls = ageH != null && ageH < 6 ? '⚡ <6 jam' : ageH != null && ageH < 24 ? '⚡ early' : 'baru';
+  const ageCls = ageH != null && ageH < 0.25 ? '⚡ baru lahir' : ageH != null && ageH < 6 ? '⚡ <6 jam' : ageH != null && ageH < 24 ? '⚡ early' : 'baru';
   return `<div class="prow">
     <span class="token-identity">
       ${avatarHtml(t)}
@@ -751,13 +751,13 @@ function potentialView() {
   else body = state.potential.map(potentialRowHtml).join('');
   return `${pageHeader('Aman · muda · early',
     'Token potensial, sudah terverifikasi.',
-    'Token paling baru yang MELEWATI cek rug (RugCheck/GoPlus level aman/waspada), diurut paling muda dulu untuk early entry. Tag 🔥 menandai token yang namanya berkaitan dengan topik yang lagi panas di radar.',
+    'Token paling baru yang MELEWATI cek rug (RugCheck/GoPlus level aman/waspada), diurut paling muda dulu untuk early entry — mulai dari pool yang baru lahir 1-2 menit. Tag 🔥 menandai token yang namanya berkaitan dengan topik yang lagi panas di radar.',
     `<button class="soft-button" data-action="refresh-potential">${icon('radar', 15)} Segarkan</button>`)}
   <section class="section-block">
     <div class="screener-table clay-card">
       <div class="table-head pot-head"><span>Token</span><span>Umur</span><span>Topik panas</span><span>MC / liq</span><span>Vol / B-S</span><span>Keamanan</span><span>Aksi</span></div>
       ${body}
-      <div class="table-footer"><span>${state.potential.length ? `${state.potential.length} token lolos verifikasi · urut paling muda dulu` : 'kandidat: token profil/boost terbaru + hasil search topik radar'}</span><span class="text-button">${icon('shield', 13)} wajib lolos cek rug</span></div>
+      <div class="table-footer"><span>${state.potential.length ? `${state.potential.length} token lolos verifikasi · urut paling muda dulu` : 'kandidat: pool baru GeckoTerminal (1-2 menit) + profil/boost terbaru + search topik radar'}</span><span class="text-button">${icon('shield', 13)} wajib lolos cek rug</span></div>
     </div>
   </section>`;
 }

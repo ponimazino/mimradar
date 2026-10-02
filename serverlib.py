@@ -36,6 +36,7 @@ HEADERS = {
 DEX = "https://api.dexscreener.com"
 RUGCHECK = "https://api.rugcheck.xyz"
 GOPLUS = "https://api.gopluslabs.io"
+GECKO = "https://api.geckoterminal.com/api/v2"
 
 # numeric chain id untuk GoPlus (EVM saja)
 GOPLUS_CHAIN = {
@@ -327,6 +328,85 @@ Q1 Q2 Q3 Q4 OTC W2 W4 K1 401K ROTH AGI CPA CPA CTA ACH PIN SSN
 
 SOCIAL_CACHE = {"ts": 0.0, "data": None}
 
+# pool BARU dibuat (umur 1-2 menit) via GeckoTerminal — satu-satunya sumber
+# yang lebih early dari profil/boost DexScreener. Cache 2 menit biar hemat rate limit.
+GECKO_CACHE = {"ts": 0.0, "pools": None}
+
+
+def gecko_new_pools():
+    """[(chain, token_addr, attrs, pool_addr)] dari feed new_pools, dedup per token
+    (reserve terbesar). Token seumur 90 detik pun bisa muncul di sini."""
+    if GECKO_CACHE["pools"] is not None and time.time() - GECKO_CACHE["ts"] < 120:
+        return GECKO_CACHE["pools"]
+    best = {}
+    for network in ("solana", "base", "bsc", "ethereum"):
+        try:
+            d = fetch_json(f"{GECKO}/networks/{network}/new_pools", timeout=12)
+        except Exception:
+            continue
+        for p in d.get("data") or []:
+            attrs = p.get("attributes") or {}
+            tok_id = ((p.get("relationships") or {}).get("base_token") or {}).get("data") or {}
+            tok_id = tok_id.get("id") or ""
+            addr = tok_id.split("_", 1)[1] if "_" in tok_id else ""
+            if not addr:
+                continue
+            key = (network, addr)
+            reserve = float(attrs.get("reserve_in_usd") or 0)
+            if key not in best or reserve > best[key][2]:
+                best[key] = (attrs, attrs.get("address") or "", reserve)
+    pools = [(c, a, v[0], v[1]) for (c, a), v in best.items()]
+    GECKO_CACHE["pools"] = pools
+    GECKO_CACHE["ts"] = time.time()
+    return pools
+
+
+def gecko_item(chain, address, a, pool_address):
+    """Bangun item kompatibel pair_item langsung dari atribut pool GeckoTerminal —
+    dipakai untuk token yang BELUM terindeks DexScreener (umur 1-2 menit)."""
+    created = None
+    try:
+        created = int(time.mktime(time.strptime(a.get("pool_created_at") or "", "%Y-%m-%dT%H:%M:%SZ")) * 1000)
+    except ValueError:
+        pass
+    symbol = (a.get("name") or "").split(" / ")[0] or address[:4]
+    vol = a.get("volume_usd") or {}
+    tx = a.get("transactions") or {}
+    t24 = tx.get("h24") or {}
+    chg = a.get("price_change_percentage") or {}
+
+    def fnum(v):
+        try:
+            return float(v)
+        except (TypeError, ValueError):
+            return None
+
+    return {
+        "chain": chain,
+        "address": address,
+        "name": symbol,
+        "symbol": symbol,
+        "pairUrl": f"https://www.geckoterminal.com/{chain}/pools/{pool_address}",
+        "dexId": "pool baru",
+        "created": created,
+        "ageHours": round((time.time() * 1000 - created) / 3.6e6, 2) if created else None,
+        "priceUsd": a.get("base_token_price_usd"),
+        "mc": a.get("market_cap_usd") or a.get("fdv_usd"),
+        "liq": float(a.get("reserve_in_usd") or 0) or None,
+        "vol24h": fnum(vol.get("h24")) or 0,
+        "vol6h": fnum(vol.get("h6")) or 0,
+        "vol1h": fnum(vol.get("h1")) or 0,
+        "volRecent": fnum(vol.get("m15")) or 0,
+        "chg1h": fnum(chg.get("h1")),
+        "chg6h": fnum(chg.get("h6")),
+        "chg24h": fnum(chg.get("h24")),
+        "buys24h": t24.get("buys"),
+        "sells24h": t24.get("sells"),
+        "image": None,
+        "socials": [],
+        "gmgn": gmgn_url(chain, address),
+    }
+
 
 def social_cached():
     """api_social scrape 3 sumber — potential/section lain pakai cache 5 menit."""
@@ -359,10 +439,12 @@ def match_topics(item, social):
 
 def api_potential():
     """Token POTENSIAL untuk early entry:
-    - kandidat = token yang BARU dibuat profil/di-boost (dev lagi aktif)
+    - kandidat = pool BARU GeckoTerminal (umur 1-2 menit — paling early)
+      + token yang BARU dibuat profil/di-boost (dev lagi aktif)
       + hasil search keyword topik radar yang lagi panas
-    - WAJIB lolos verifikasi RugCheck/GoPlus (level good/warning; unknown tidak masuk)
-    - umur <= 72 jam, ada aktivitas (vol >= $500)
+    - WAJIB lolos verifikasi RugCheck/GoPlus (level good/warning; unknown tidak masuk —
+      token 90 detik yang belum terindeks rugcheck jujur tampil sebagai belum terverifikasi)
+    - umur <= 72 jam; token < 30 menit diukur lewat volume 15-menit, sisanya vol 24 jam
     - diurut paling MUDA dulu, plus penanda topik radar yang cocok.
     """
     social = social_cached()
@@ -404,7 +486,16 @@ def api_potential():
                 seen.add(k)
                 cands.append(k)
 
-    # 3) statistik pair per chain (endpoint tokens/v1, maks 30 alamat per call)
+    # 3) pool BARU (umur bisa 1-2 menit) via GeckoTerminal — paling early
+    gecko = {}
+    for chain, addr, attrs, pool_addr in gecko_new_pools():
+        k = (chain, addr)
+        if k not in seen:
+            seen.add(k)
+            cands.append(k)
+        gecko[k] = (attrs, pool_addr)
+
+    # 4) statistik pair per chain (endpoint tokens/v1, maks 30 alamat per call)
     by_chain = {}
     for chain, addr in cands:
         by_chain.setdefault(chain, []).append(addr)
@@ -426,8 +517,12 @@ def api_potential():
     items = []
     for (chain, addr), (p, _liq) in best.items():
         items.append(pair_item(p, {"description": desc_of.get((chain, addr), "")}))
+    # token yang belum terindeks DexScreener (terlalu baru) -> bangun dari data gecko
+    for k, (attrs, pool_addr) in gecko.items():
+        if k not in best:
+            items.append(gecko_item(k[0], k[1], attrs, pool_addr))
 
-    # 4) verifikasi paralel (cache 10 menit) — HANYA yang benar terverifikasi lolos
+    # 5) verifikasi paralel (cache 10 menit) — HANYA yang benar terverifikasi lolos
     with ThreadPoolExecutor(max_workers=6) as ex:
         levels = list(ex.map(lambda it: safety_level(it["chain"], it["address"]), items))
     out = []
@@ -436,7 +531,11 @@ def api_potential():
             continue
         if it["ageHours"] is None or it["ageHours"] > 72:
             continue
-        if (it["vol24h"] or 0) < 500:
+        if it["ageHours"] < 0.5:
+            # token < 30 menit: volume 24j belum bermakna — ukur lewat vol 15 menit
+            if (it.get("volRecent") or it.get("vol24h") or 0) < 100:
+                continue
+        elif (it["vol24h"] or 0) < 500:
             continue
         it["safe"] = s
         it["topics"] = match_topics(it, social)
