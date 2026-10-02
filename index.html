@@ -434,7 +434,7 @@ const state = {
   verifiedOnly: true,
   social: { google: [], x: [], biz: [], fetchedAt: {}, errors: [] },
   trending: [], trendSafe: {},
-  potential: [], potentialLoading: false, potentialError: '', potentialAge: '1440',
+  potential: [], potentialLoading: false, potentialError: '', potentialAge: '60-1440',
   verify: { loading: false, error: '', token: null, safe: null },
   items: [], found: 0, query: '', removed: 0, searching: false, searchError: '', searched: false,
   safety: {},        // "chain:addr" -> data keamanan (level sudah dihitung)
@@ -747,14 +747,24 @@ function potentialRowHtml(t) {
   </div>`;
 }
 function potentialView() {
-  const AGE_OPTS = [['1', '< 1 menit'], ['5', '< 5 menit'], ['60', '< 1 jam'], ['240', '< 4 jam'], ['1440', '< 24 jam'], ['10080', '< 1 minggu']];
-  const ageMax = +state.potentialAge;
-  const shown = state.potential.filter(t => t.ageHours != null && t.ageHours * 60 < ageMax);
+  // pembagian bucket umur (menit): 0-1m | 1-5m | 5-60m | 1-24j | semua
+  const AGE_BUCKETS = [
+    ['0-1', 'umur 0 – 1 mnt', 0, 1],
+    ['1-5', 'umur 1 – 5 mnt', 1, 5],
+    ['5-60', 'umur 5 – 60 mnt', 5, 60],
+    ['60-1440', 'umur 1 – 24 jam', 60, 1440],
+    ['all', 'semua umur (≤ 7 hari)', 0, 10080],
+  ];
+  const bucket = AGE_BUCKETS.find(b => b[0] === state.potentialAge) || AGE_BUCKETS[3];
+  const shown = state.potential.filter(t => {
+    const m = (t.ageHours || 0) * 60;
+    return m >= bucket[2] && m < bucket[3];
+  });
   const nVerif = shown.filter(t => t.verified !== false).length;
   let body;
   if (state.potentialLoading) body = `<div class="empty-state"><span class="spin"></span><p>memindai token baru &amp; memverifikasi lewat RugCheck/GoPlus…</p></div>`;
   else if (state.potentialError) body = `<div class="empty-state"><div class="empty-icon">!</div><strong>gagal memuat</strong><p>${esc(state.potentialError)}</p></div>`;
-  else if (!shown.length) body = `<div class="empty-state"><div class="empty-icon">⌕</div><strong>Tidak ada token dalam rentang umur ini.</strong><p>Token baru lahir tiap beberapa menit — coba rentang lebih lebar atau segarkan lagi nanti.</p></div>`;
+  else if (!shown.length) body = `<div class="empty-state"><div class="empty-icon">⌕</div><strong>Tidak ada token di rentang umur ini.</strong><p>Token baru lahir tiap beberapa menit — coba rentang lain atau segarkan lagi nanti.</p></div>`;
   else body = shown.map(potentialRowHtml).join('');
   return `${pageHeader('Aman · muda · early',
     'Token potensial, paling early.',
@@ -762,7 +772,7 @@ function potentialView() {
     `<button class="soft-button" data-action="refresh-potential">${icon('radar', 15)} Segarkan</button>`)}
   <div class="filter-row" style="margin-bottom:14px">
     <label class="select-wrap"><select id="potAge">
-      ${AGE_OPTS.map(([v, l]) => `<option value="${v}" ${state.potentialAge === v ? 'selected' : ''}>umur ${l}</option>`).join('')}
+      ${AGE_BUCKETS.map(([v, l]) => `<option value="${v}" ${state.potentialAge === v ? 'selected' : ''}>${l}</option>`).join('')}
     </select></label>
     ${state.potential.length && !state.potentialLoading ? `<span class="kw-meta" style="align-self:center">${nVerif} terverifikasi · ${shown.length - nVerif} belum terverifikasi (terlalu baru)</span>` : ''}
   </div>
