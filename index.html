@@ -860,18 +860,27 @@ function verifyView() {
 function trendingView() {
   const cards = state.trending.map((t, i) => {
     const s = state.trendSafe[key(t)];
+    const origin = t.origin === 'organik'
+      ? `<span class="pill good" title="trending alami — volume & likuiditas nyata, bukan bayaran">📈 organik</span>`
+      : `<span class="pill warn" title="dev bayar biar tampil di DexScreener — fase distribusi, sinyal terlambat">💰 di-boost</span>`;
     return `<div class="trend-card clay-card">
-      <div class="trend-card-top"><span>${fmtAge(t.ageHours)}</span><span>${fmtUsd(t.mc)}</span><span class="trend-time">${fmtUsd(t.vol24h)} vol</span></div>
+      <div class="trend-card-top"><span>${fmtAge(t.ageHours)}</span><span>${fmtUsd(t.mc)}</span><span class="trend-time">${origin}</span></div>
       <div class="trend-topic chain-name-ic">${avatarHtml(t)}<span style="min-width:0">${esc(t.name || t.symbol)}${chainIcon(t.chain)}</span></div>
       <div class="trend-desc">${esc(t.description || '(tanpa deskripsi)')}</div>
       <div class="trend-metrics"><strong>${fmtUsd(t.vol24h)}</strong><span>vol 24j</span><b>${fmtPct(t.chg24h)}</b></div>
       ${s ? `<div>${safetyPill(s)}</div>` : ''}
+      <div class="link-row" style="margin-top:2px">
+        ${t.gmgn ? `<a href="${esc(t.gmgn)}" target="_blank" rel="noopener">GMGN ↗</a>` : ''}
+        <a href="${esc(t.pairUrl)}" target="_blank" rel="noopener">Dex ↗</a>
+        ${t.chain === 'solana' ? `<a href="https://rugcheck.xyz/tokens/${esc(t.address)}" target="_blank" rel="noopener">RugCheck ↗</a>` : ''}
+        <button data-action="copy-ca" data-addr="${esc(t.address)}">Copy CA</button>
+      </div>
       <button class="soft-button" data-trend-search="${i}" style="align-self:flex-start">${icon('search', 13)} cari narasi ini</button>
     </div>`;
   }).join('');
   return `${pageHeader('Sinyal TERLAMBAT · konfirmasi momentum',
-    'Sudah viral di DexScreener.',
-    'Token di-boost = dev bayar biar tampil = biasanya sudah fase distribusi. Pakai untuk membaca arah narasi &amp; konfirmasi momentum — bukan untuk entry early. Badge tetap menandai mana yang lolos cek rug.',
+    'Sedang ramai di dex.',
+    'Dua sumber: 📈 organik (trending dari volume & likuiditas nyata — lebih proven) dan 💰 di-boost (dev bayar biar tampil — fase distribusi). Pakai untuk konfirmasi momentum, bukan entry early. Cek link di kartu untuk verifikasi official sebelum entry.',
     `<button class="soft-button" data-action="refresh-trending">${icon('radar', 15)} Segarkan</button>`)}
   <section class="section-block"><div class="trend-preview-grid">${cards || '<div class="empty-state"><span class="spin"></span><p>memuat trending…</p></div>'}</div></section>`;
 }

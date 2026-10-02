@@ -361,6 +361,32 @@ def gecko_new_pools():
     return pools
 
 
+# trending ORGANIK (algoritma vol/likuiditas nyata — bukan boost bayaran)
+GECKO_TREND_CACHE = {"ts": 0.0, "keys": None}
+
+
+def gecko_trending_pools():
+    """[(chain, token_addr)] dari trending_pools GeckoTerminal, 4 chain.
+    Ini sinyal trending yang lebih proven: berdasarkan aktivitas pasar nyata."""
+    if GECKO_TREND_CACHE["keys"] is not None and time.time() - GECKO_TREND_CACHE["ts"] < 300:
+        return GECKO_TREND_CACHE["keys"]
+    keys = []
+    for network in ("solana", "base", "bsc", "ethereum"):
+        try:
+            d = fetch_json(f"{GECKO}/networks/{network}/trending_pools?page=1", timeout=12)
+        except Exception:
+            continue
+        for p in d.get("data") or []:
+            tok_id = ((p.get("relationships") or {}).get("base_token") or {}).get("data") or {}
+            tok_id = tok_id.get("id") or ""
+            addr = tok_id.split("_", 1)[1] if "_" in tok_id else ""
+            if addr:
+                keys.append((network, addr))
+    GECKO_TREND_CACHE["keys"] = keys
+    GECKO_TREND_CACHE["ts"] = time.time()
+    return keys
+
+
 def gecko_item(chain, address, a, pool_address):
     """Bangun item kompatibel pair_item langsung dari atribut pool GeckoTerminal —
     dipakai untuk token yang BELUM terindeks DexScreener (umur 1-2 menit)."""
@@ -552,7 +578,9 @@ def api_potential():
 
 
 def api_trending():
-    """Token yang lagi di-boost/punya profil di DexScreener — proksi 'narasi panas'.
+    """Trending dari DUA sumber, ditandai asalnya:
+    - 'organik': trending_pools GeckoTerminal — vol/likuiditas NYATA (bukan bayaran)
+    - 'boost'  : profil/boost DexScreener — dev bayar biar tampil (sinyal terlambat)
     Deskripsi token dibawa sebagai teks narasi."""
     entries = []
     for path in ("/token-boosts/top/v1", "/token-profiles/latest/v1"):
@@ -576,6 +604,14 @@ def api_trending():
 
     keys = order[:36]
 
+    # trending organik GeckoTerminal — ranking dari vol/likuiditas nyata
+    organic = set()
+    for k in gecko_trending_pools():
+        if k not in meta:
+            meta[k] = {}
+            keys.append(k)
+        organic.add(k)
+
     # ambil statistik pair: endpoint tokens/v1 menerima maks 30 alamat per chain
     by_chain = {}
     for k in keys:
@@ -597,9 +633,14 @@ def api_trending():
                 if cur is None or liq > cur[1]:
                     detail[key] = (p, liq)
 
-    items = [pair_item(detail[k][0], meta.get(k)) for k in keys if k in detail]
+    items = []
+    for k in keys:
+        if k in detail:
+            it = pair_item(detail[k][0], meta.get(k))
+            it["origin"] = "organik" if k in organic else "boost"
+            items.append(it)
     items.sort(key=lambda x: x["vol24h"] or 0, reverse=True)
-    return {"items": items}
+    return {"items": items[:30]}
 
 
 def rugcheck_safety(address):
