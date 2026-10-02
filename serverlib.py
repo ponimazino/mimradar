@@ -522,15 +522,20 @@ def api_potential():
         if k not in best:
             items.append(gecko_item(k[0], k[1], attrs, pool_addr))
 
-    # 5) verifikasi paralel (cache 10 menit) — HANYA yang benar terverifikasi lolos
+    # 5) verifikasi paralel (cache 10 menit) — gagal guard = tidak tampil;
+    #    terlalu baru untuk diverifikasi = tampil, tapi ditandai belum verif
     with ThreadPoolExecutor(max_workers=6) as ex:
         levels = list(ex.map(lambda it: safety_level(it["chain"], it["address"]), items))
+    checkable = {"solana"} | set(GOPLUS_CHAIN)  # chain yang punya pemeriksa otomatis
     out = []
     for it, s in zip(items, levels):
-        if s.get("level") not in ("good", "warning"):
-            continue
-        if it["ageHours"] is None or it["ageHours"] > 72:
-            continue
+        lvl = s.get("level")
+        if lvl in ("serious", "critical"):
+            continue  # gagal guard — jangan tampilkan (aturan wajib)
+        if it["ageHours"] is None or it["ageHours"] > 168:
+            continue  # lebih tua dari 1 minggu — bukan lagi "early"
+        if lvl == "unknown" and it["chain"] not in checkable:
+            continue  # chain tanpa pemeriksa selamanya — "belum verif" abadi, cuma noise
         if it["ageHours"] < 0.5:
             # token < 30 menit: volume 24j belum bermakna — ukur lewat vol 15 menit
             if (it.get("volRecent") or it.get("vol24h") or 0) < 100:
@@ -538,11 +543,12 @@ def api_potential():
         elif (it["vol24h"] or 0) < 500:
             continue
         it["safe"] = s
+        it["verified"] = lvl in ("good", "warning")
         it["topics"] = match_topics(it, social)
         out.append(it)
 
     out.sort(key=lambda x: x["created"] or 0, reverse=True)  # paling muda dulu
-    return {"total": len(out), "items": out[:24]}
+    return {"total": len(out), "items": out[:40]}
 
 
 def api_trending():

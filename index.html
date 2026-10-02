@@ -434,7 +434,7 @@ const state = {
   verifiedOnly: true,
   social: { google: [], x: [], biz: [], fetchedAt: {}, errors: [] },
   trending: [], trendSafe: {},
-  potential: [], potentialLoading: false, potentialError: '',
+  potential: [], potentialLoading: false, potentialError: '', potentialAge: '1440',
   verify: { loading: false, error: '', token: null, safe: null },
   items: [], found: 0, query: '', removed: 0, searching: false, searchError: '', searched: false,
   safety: {},        // "chain:addr" -> data keamanan (level sudah dihitung)
@@ -726,6 +726,9 @@ function potentialRowHtml(t) {
     : `<span class="topics-none">—</span>`;
   const ageH = t.ageHours;
   const ageCls = ageH != null && ageH < 0.25 ? '⚡ baru lahir' : ageH != null && ageH < 6 ? '⚡ <6 jam' : ageH != null && ageH < 24 ? '⚡ early' : 'baru';
+  const pill = t.verified === false
+    ? `<span class="pill na" title="Terlalu baru — RugCheck/GoPlus belum mengindeks. Bukan berarti aman: verifikasi manual di GMGN dulu.">? belum verif</span>`
+    : safetyPill(t.safe);
   return `<div class="prow">
     <span class="token-identity">
       ${avatarHtml(t)}
@@ -735,7 +738,7 @@ function potentialRowHtml(t) {
     <span>${topics}</span>
     <span class="cell"><strong>${fmtUsd(t.mc)}</strong><span>${t.liq ? 'liq ' + fmtUsd(t.liq) : 'curve'}</span></span>
     <span class="cell"><strong>${fmtUsd(t.vol24h)}</strong><span>${t.buys24h ?? '–'}/${t.sells24h ?? '–'} B/S</span></span>
-    <span class="safe-cell">${safetyPill(t.safe)}</span>
+    <span class="safe-cell">${pill}</span>
     <span>
       ${t.gmgn ? `<a class="link-mini" href="${esc(t.gmgn)}" target="_blank" rel="noopener">GMGN</a>` : ''}
       <a class="link-mini" href="${esc(t.pairUrl)}" target="_blank" rel="noopener">DEX</a>
@@ -744,20 +747,30 @@ function potentialRowHtml(t) {
   </div>`;
 }
 function potentialView() {
+  const AGE_OPTS = [['1', '< 1 menit'], ['5', '< 5 menit'], ['60', '< 1 jam'], ['240', '< 4 jam'], ['1440', '< 24 jam'], ['10080', '< 1 minggu']];
+  const ageMax = +state.potentialAge;
+  const shown = state.potential.filter(t => t.ageHours != null && t.ageHours * 60 < ageMax);
+  const nVerif = shown.filter(t => t.verified !== false).length;
   let body;
   if (state.potentialLoading) body = `<div class="empty-state"><span class="spin"></span><p>memindai token baru &amp; memverifikasi lewat RugCheck/GoPlus…</p></div>`;
   else if (state.potentialError) body = `<div class="empty-state"><div class="empty-icon">!</div><strong>gagal memuat</strong><p>${esc(state.potentialError)}</p></div>`;
-  else if (!state.potential.length) body = `<div class="empty-state"><div class="empty-icon">⌕</div><strong>Belum ada yang lolos.</strong><p>Belum ada token baru yang lolos verifikasi rug saat ini — coba segarkan beberapa menit lagi; token baru lahir tiap jam.</p></div>`;
-  else body = state.potential.map(potentialRowHtml).join('');
+  else if (!shown.length) body = `<div class="empty-state"><div class="empty-icon">⌕</div><strong>Tidak ada token dalam rentang umur ini.</strong><p>Token baru lahir tiap beberapa menit — coba rentang lebih lebar atau segarkan lagi nanti.</p></div>`;
+  else body = shown.map(potentialRowHtml).join('');
   return `${pageHeader('Aman · muda · early',
-    'Token potensial, sudah terverifikasi.',
-    'Token paling baru yang MELEWATI cek rug (RugCheck/GoPlus level aman/waspada), diurut paling muda dulu untuk early entry — mulai dari pool yang baru lahir 1-2 menit. Tag 🔥 menandai token yang namanya berkaitan dengan topik yang lagi panas di radar.',
+    'Token potensial, paling early.',
+    'Token paling baru — mulai dari pool yang baru lahir 1-2 menit. Yang gagal cek rug (BAHAYA/RISIKO) tidak pernah ditampilkan; yang terlalu baru untuk diverifikasi tampil dengan tanda "? belum verif". Urut paling muda dulu; tag 🔥 = berkaitan topik panas di radar.',
     `<button class="soft-button" data-action="refresh-potential">${icon('radar', 15)} Segarkan</button>`)}
+  <div class="filter-row" style="margin-bottom:14px">
+    <label class="select-wrap"><select id="potAge">
+      ${AGE_OPTS.map(([v, l]) => `<option value="${v}" ${state.potentialAge === v ? 'selected' : ''}>umur ${l}</option>`).join('')}
+    </select></label>
+    ${state.potential.length && !state.potentialLoading ? `<span class="kw-meta" style="align-self:center">${nVerif} terverifikasi · ${shown.length - nVerif} belum terverifikasi (terlalu baru)</span>` : ''}
+  </div>
   <section class="section-block">
     <div class="screener-table clay-card">
       <div class="table-head pot-head"><span>Token</span><span>Umur</span><span>Topik panas</span><span>MC / liq</span><span>Vol / B-S</span><span>Keamanan</span><span>Aksi</span></div>
       ${body}
-      <div class="table-footer"><span>${state.potential.length ? `${state.potential.length} token lolos verifikasi · urut paling muda dulu` : 'kandidat: pool baru GeckoTerminal (1-2 menit) + profil/boost terbaru + search topik radar'}</span><span class="text-button">${icon('shield', 13)} wajib lolos cek rug</span></div>
+      <div class="table-footer"><span>${shown.length ? `${shown.length} token dalam rentang umur terpilih · urut paling muda dulu` : 'kandidat: pool baru GeckoTerminal (1-2 menit) + profil/boost terbaru + search topik radar'}</span><span class="text-button">${icon('shield', 13)} gagal guard = disembunyikan</span></div>
     </div>
   </section>`;
 }
@@ -914,6 +927,8 @@ function bindEvents() {
   }
   const ca = document.querySelector('#ca');
   if (ca) ca.addEventListener('keydown', e => { if (e.key === 'Enter') doVerify(); });
+  const potAge = document.querySelector('#potAge');
+  if (potAge) potAge.addEventListener('change', () => { state.potentialAge = potAge.value; render(); });
 }
 
 async function doVerify() {
