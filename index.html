@@ -820,7 +820,7 @@ function potentialRowHtml(t) {
     <span class="cell"><strong>${fmtUsd(t.vol24h)}</strong><span>${t.buys24h ?? '–'}/${t.sells24h ?? '–'} B/S</span></span>
     <span class="safe-cell">${pill}</span>
     <span>
-      ${t.gmgn ? `<a class="link-mini" href="${esc(t.gmgn)}" target="_blank" rel="noopener">GMGN</a>` : ''}
+      ${t.gmgn ? `<a class="link-mini" href="${esc(t.gmgn)}" target="_blank" rel="noopener" title="GMGN — token umur 1-2 menit kadang belum terindeks GMGN (halaman blank gelap = belum ada datanya, bukan link rusak); tunggu beberapa menit lalu buka lagi">GMGN</a>` : ''}
       <a class="link-mini" href="${esc(t.pairUrl)}" target="_blank" rel="noopener">DEX</a>
       <button class="link-mini" data-action="copy-ca" data-addr="${esc(t.address)}">CA</button>
     </span>
