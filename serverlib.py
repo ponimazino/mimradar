@@ -5,6 +5,7 @@ Proxy ke API publik gratis (tanpa API key):
   - Google Trends: keyword yang lagi viral mainstream (sinyal PALING early)
   - X/Twitter     : tren hashtag via scraping trends24.in (API resmi X berbayar)
   - 4chan /biz/    : kata/ticker yang lagi di-spam di lantai shill paling awal
+  - RSS berita     : CoinDesk/Cointelegraph/Decrypt — narasi crypto-native
   - DexScreener    : search pair, trending/boosted tokens, detail pair
   - RugCheck       : skor keamanan token Solana
   - GoPlus         : cek keamanan kontrak EVM (ETH/Base/BSC/Polygon/Arbitrum)
@@ -17,6 +18,7 @@ Dipakai dari dua pintu:
 import html as html_mod
 import inspect
 import json
+import math
 import re
 import time
 import urllib.error
@@ -98,6 +100,7 @@ def pair_item(p, meta=None):
         "vol24h": vol.get("h24") or 0,
         "vol6h": vol.get("h6") or 0,
         "vol1h": vol.get("h1") or 0,
+        "volRecent": vol.get("m5") or 0,
         "chg1h": chg.get("h1"),
         "chg6h": chg.get("h6"),
         "chg24h": chg.get("h24"),
@@ -177,11 +180,13 @@ def api_social():
     - X/Twitter (scraping trends24.in): tren AS, tiap item bawa link search X.
     - 4chan /biz/ (API JSON publik): lantai shill paling awal; tiap item bawa
       link thread terbaru yang menyebutnya + waktu post terakhir.
+    - RSS berita crypto (CoinDesk/Cointelegraph/Decrypt): istilah yang paling
+      sering muncul di judul — narasi crypto-native, bukan tren politik AS.
     Tiap keyword dilacak kapan pertama & terakhir terlihat di radar
     (riwayat di memori server, selama server jalan).
     Satu sumber gagal tidak mematikan sumber lain.
     """
-    out = {"fetchedAt": {}, "google": [], "x": [], "biz": [], "errors": []}
+    out = {"fetchedAt": {}, "google": [], "x": [], "biz": [], "news": [], "errors": []}
 
     try:
         out["google"] = google_trends()
@@ -200,6 +205,12 @@ def api_social():
         out["fetchedAt"]["biz"] = int(time.time())
     except Exception as e:
         out["errors"].append(f"/biz/ gagal: {e}")
+
+    try:
+        out["news"] = news_items()
+        out["fetchedAt"]["news"] = int(time.time())
+    except Exception as e:
+        out["errors"].append(f"berita crypto gagal: {e}")
 
     return out
 
@@ -301,7 +312,7 @@ def biz_items():
 # istilah finansial, saturan umum — supaya yang tersisa benar-benar ticker/narasi
 BIZ_STOP = frozenset("""
 THE AND ARE BUT NOT FOR IT WITH THIS THAT FROM HAVE WILL THEY WHAT WHEN ALL CAN OUT
-GET WAS HAS ONE HOW WHY WHO YES OK NO LOL LMAO WTF ROFL KEK IS TO OF WE SO UP
+GET WAS HAS WERE ONE HOW WHY WHO YES OK NO LOL LMAO WTF ROFL KEK IS TO OF WE SO UP
 OVER UNDER SHORT LONG STOP LOSS TAKE FOMO FUD RISK CASH DEBT LOAN JOBS JOB
 RATE DATA NEWS INFO FREE MAKE MADE JUST LIKE ONLY MORE MOST THAN THEN THEM
 THOSE HERE THERE BEEN BEING DOES DONE GOING WANT NEED KNOW SAID SAY BEST REAL
@@ -322,6 +333,88 @@ APY TVL PNL MC GDP ETF IRS FED IMF CEO CFO CTO COO VP IPO SEC DOJ FBI CIA
 NYSE DTCC SWIFT REIT IRA FICA AUM ROE ROA ROI CAGR EBITDA YOY QOQ H1 H2
 Q1 Q2 Q3 Q4 OTC W2 W4 K1 401K ROTH AGI CPA CPA CTA ACH PIN SSN
 """.split())
+
+
+# ---------- sumber ke-4: judul berita crypto (narasi crypto-native) ----------
+
+NEWS_FEEDS = [
+    ("CoinDesk", "https://www.coindesk.com/arc/outboundfeeds/rss/"),
+    ("Cointelegraph", "https://cointelegraph.com/rss"),
+    ("Decrypt", "https://decrypt.co/feed"),
+]
+
+# kata yang BUKAN narasi: kata umum bahasa Inggris, jargon berita, istilah
+# crypto generik, dan coin besar yang selalu ada tiap hari (bukan sinyal baru)
+NEWS_STOP = frozenset("""
+THE AND ARE BUT NOT FOR IT WITH THIS THAT FROM HAVE WILL THEY WHAT WHEN
+ALL CAN OUT WAS HAS ONE HOW WHY WHO ITS ALSO MORE MOST THAN THEN THEM
+THOSE HERE THERE BEEN BEING DOES DONE GOING WANT NEED KNOW SAID SAY BEST
+REAL FULL EACH EVER NEVER ALWAYS STILL YET TOO AFTER BEFORE AGAIN BECAUSE
+WHILE WHERE WHICH WOULD COULD SHOULD MUST MIGHT OVER UNDER ABOUT INTO
+AFTER AGAIN AMID BETWEEN THROUGH DURING SINCE UPON EVERY SOME JUST LIKE
+ONLY NEXT FIRST SECOND THIRD LAST LATEST NEW NEWS REPORT REPORTS REPORTED
+SAYS SAYING TELLS TOLD ACCORDING AMONG ACROSS BASED USING USE USED MAKE
+MADE TAKE TAKEN LOOK LOOKING SHOW SHOWS SHOWED SEEM SEEMS BIG HUGE HUGE
+MASSIVE MAJOR TOP LIST GUIDE ANALYSIS ANALYST EXPERT EXPERTS EXPLAINER
+HERE EVERYTHING THINGS WAYS NEED KNOW WATCH DAILY WEEKLY MONTH QUARTER
+YEAR YEARS TODAY TONIGHT WEEK MONTHS PRICE PRICES MARKET MARKETS TRADING
+TRADE TRADED INVEST INVESTOR INVESTORS CRYPTO CRYPTOCURRENCY BLOCKCHAIN
+EXCHANGE EXCHANGES LAUNCH LAUNCHES LAUNCHED LAUNCHPAD PLATFORM SERVICE
+SERIES FUNDING FIRM FIRMS COMPANY COMPANIES BANK BANKS MONEY DOLLAR DATA
+BITCOIN BTC ETHEREUM ETH ETHEREUMS SOLANA SOL TOKEN TOKENS COIN COINS
+YOUR YOU YOURS THEIR OUR THEY THEM THESE THOSE WHATS DONT DOESNT CANT
+WONT ISNT HERES WHYS WHY JOBS JOB RULES RULE UPDATE UPDATES LIVE
+HIT HITS PLAN PLANS SET SETS RISE RISES FELL FALL FALLS DROPS JUMP
+JUMPS SURGE SURGES WIN WINS LOSS LOSSES GAINS GAIN GROWTH GROW RAISE
+RAISES BOOST BOOSTS POTENTIAL EARLY BILLION MILLION TRILLION THOUSAND
+HUNDRED TRILLION FIGURE FIGURES LEVEL LEVELS TERM TERMS BACK BACKS
+GROUP GROUPS AHEAD DOWN ANOTHER OTHER OTHERS INTERVIEW INTERVIEWS
+ADVISERS ADVISER INVESTMENT INVESTMENTS REGULATOR REGULATORS CUSTODY
+SMALL TOP TOPS CROSSES CROSS SPEECH DINNER BANNED TWICE BUILT BUILD
+BUILDS GIVES GAVE GLIMPSE CHANGE CHANGES SUE SUES SUED GRANT GRANTS
+GRANTED BANS BAN MOVES MOVE MOVED
+""".split())
+NEWS_STOP = frozenset(w.lower() for w in NEWS_STOP)
+
+
+def _cdata(s):
+    """buang pembungkus CDATA kalau ada"""
+    s = s.strip()
+    if s.startswith("<![CDATA["):
+        s = s[9:]
+    if s.endswith("]]>"):
+        s = s[:-3]
+    return s.strip()
+
+
+def news_items():
+    """Istilah yang paling sering muncul di judul berita crypto 3 media —
+    sumber narasi yang crypto-native (kebalikan tren politik/selebriti di
+    Google/X). Tiap keyword bawa judul + link berita terakhir sebagai bukti."""
+    words = {}
+    for _name, url in NEWS_FEEDS:
+        try:
+            raw = fetch_text(url, timeout=15)
+        except Exception:
+            continue
+        for block in re.findall(r"<item>(.*?)</item>", raw, re.S):
+            m = re.search(r"<title>(.*?)</title>", block, re.S)
+            title = html_mod.unescape(_cdata(m.group(1))) if m else ""
+            title = re.sub(r"\s*[-–|]\s*(CoinDesk|Cointelegraph|Decrypt)\s*$", "", title).strip()
+            if not title:
+                continue
+            m = re.search(r"<link>(.*?)</link>", block, re.S)
+            link = _cdata(m.group(1)) if m else ""
+            for w in re.findall(r"[A-Za-z][A-Za-z0-9-]{3,}", title):
+                low = w.lower()
+                if low in NEWS_STOP:
+                    continue
+                e = words.setdefault(low, {"word": w, "count": 0, "title": title, "url": link})
+                e["count"] += 1
+    items = sorted(words.values(), key=lambda x: -x["count"])[:20]
+    for it in items:
+        it["firstSeen"] = track_seen("news", it["word"])
+    return items
 
 
 # ---------- token potensial: muda + aman + terkait topik panas ----------
@@ -448,6 +541,8 @@ def match_topics(item, social):
     kws = []
     for t in social.get("biz") or []:
         kws.append(t.get("word"))
+    for t in social.get("news") or []:
+        kws.append(t.get("word"))
     for t in social.get("x") or []:
         kws.append(t.get("word"))
     for t in social.get("google") or []:
@@ -463,15 +558,37 @@ def match_topics(item, social):
     return hits[:3]
 
 
+def momentum_score(it):
+    """Skor 'seberapa HIDUP token ini sekarang' — bukan seberapa muda.
+    Volume jendela pendek (5-15 menit) bobot terbesar, lalu vol 1 jam,
+    tekanan beli (buy dominan), dan bonus kalau nyambung topik radar.
+    Kalau cuma urut umur, pool 2 menit yang sepi selalu nangkring di atas."""
+    v_now = it.get("volRecent") or 0
+    v1h = it.get("vol1h") or 0
+    v24 = it.get("vol24h") or 0
+    buys = it.get("buys24h") or 0
+    sells = it.get("sells24h") or 0
+    buy_pressure = (buys - sells) / (buys + sells) if buys + sells else 0.0
+    return round(
+        3.0 * math.log10(v_now + 1)
+        + 2.0 * math.log10(v1h + 1)
+        + 1.0 * math.log10(v24 + 1)
+        + 4.0 * max(0.0, buy_pressure)
+        + 2.0 * len(it.get("topics") or []),
+    1)
+
+
 def api_potential():
     """Token POTENSIAL untuk early entry:
     - kandidat = pool BARU GeckoTerminal (umur 1-2 menit — paling early)
       + token yang BARU dibuat profil/di-boost (dev lagi aktif)
-      + hasil search keyword topik radar yang lagi panas
+      + hasil search keyword topik radar yang lagi panas (news crypto dulu,
+        baru /biz/, X, Google — keyword crypto-native lebih relevan)
     - WAJIB lolos verifikasi RugCheck/GoPlus (level good/warning; unknown tidak masuk —
       token 90 detik yang belum terindeks rugcheck jujur tampil sebagai belum terverifikasi)
     - umur <= 72 jam; token < 30 menit diukur lewat volume 15-menit, sisanya vol 24 jam
-    - diurut paling MUDA dulu, plus penanda topik radar yang cocok.
+    - diurut MOMEMTUM tertinggi dulu (bukan paling muda) — token sepi
+      walau baru lahir tenggelam, token yang lagi bergerak naik ke atas.
     """
     social = social_cached()
 
@@ -490,8 +607,11 @@ def api_potential():
                 desc_of[k] = e.get("description") or ""
                 cands.append(k)
 
-    # 2) kandidat dari topik radar yang lagi panas
+    # 2) kandidat dari topik radar yang lagi panas — keyword berita crypto
+    #    didahulukan (crypto-native), baru lantai shill / tren mainstream
     hot = []
+    for t in (social.get("news") or [])[:5]:
+        hot.append(t.get("word"))
     for t in (social.get("biz") or [])[:4]:
         hot.append(t.get("word"))
     for t in (social.get("x") or [])[:2]:
@@ -571,9 +691,10 @@ def api_potential():
         it["safe"] = s
         it["verified"] = lvl in ("good", "warning")
         it["topics"] = match_topics(it, social)
+        it["score"] = momentum_score(it)
         out.append(it)
 
-    out.sort(key=lambda x: x["created"] or 0, reverse=True)  # paling muda dulu
+    out.sort(key=lambda x: (-(x["score"] or 0), -(x["created"] or 0)))
     return {"total": len(out), "items": out[:40]}
 
 

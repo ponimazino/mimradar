@@ -102,7 +102,7 @@ h2 { font-size: 18px; letter-spacing: -.75px; line-height: 1.1; }
 .clay-card { background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-up); }
 
 /* metric cards (radar) */
-.metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; padding: 10px 0 34px; }
+.metric-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; padding: 10px 0 34px; }
 .metric-card { min-height: 120px; padding: 17px 18px 15px; }
 .metric-top, .metric-footer { display: flex; align-items: center; justify-content: space-between; }
 .metric-top { color: var(--ink-soft); font-size: 10px; font-weight: 700; }
@@ -118,7 +118,7 @@ h2 { font-size: 18px; letter-spacing: -.75px; line-height: 1.1; }
 /* panel radar */
 .section-block { margin-top: 2px; }
 .section-heading { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 18px; gap: 14px; flex-wrap: wrap; }
-.radar-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: start; }
+.radar-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
 .radar-panel { padding: 20px; }
 .panel-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 16px; }
 .panel-heading h2 { font-size: 14px; }
@@ -130,6 +130,10 @@ h2 { font-size: 18px; letter-spacing: -.75px; line-height: 1.1; }
 .topic-dot.coral { background: var(--coral); }
 .topic-dot.lavender { background: var(--lavender); box-shadow: 0 0 0 4px rgba(168, 149, 243, .15); }
 .topic-dot.amber { background: var(--amber); box-shadow: 0 0 0 4px rgba(231, 166, 77, .15); }
+.topic-dot.mint { background: var(--mint); box-shadow: 0 0 0 4px rgba(69, 189, 154, .15); }
+.mom-hot { color: var(--coral-deep); font-weight: 800; }
+.mom-warm { color: var(--amber); font-weight: 700; }
+.mom-cold { color: var(--ink-faint); font-weight: 600; }
 .kw-btn { background: transparent; text-align: left; min-width: 0; padding: 0; }
 .kw-btn strong { display: block; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .kw-btn strong:hover { color: var(--coral-deep); text-decoration: underline; }
@@ -224,7 +228,7 @@ select { appearance: none; border: 0; outline: 0; padding: 9px 25px 9px 10px; bo
 .full-button { width: 100%; justify-content: center; margin-top: 14px; }
 
 /* potensial */
-.prow { display: grid; grid-template-columns: 1.5fr .8fr 1.4fr 1fr 1fr .95fr auto; align-items: center; gap: 10px; width: 100%; padding: 12px 16px; text-align: left; background: transparent; border-bottom: 1px solid var(--line); transition: background .16s ease; }
+.prow { display: grid; grid-template-columns: 1.5fr .8fr .9fr 1.4fr 1fr 1fr .95fr auto; align-items: center; gap: 10px; width: 100%; padding: 12px 16px; text-align: left; background: transparent; border-bottom: 1px solid var(--line); transition: background .16s ease; }
 .prow:last-child { border-bottom: 0; }
 .prow:hover { background: rgba(255, 255, 255, .53); }
 .prow .age-big { font-size: 12px; font-weight: 800; color: var(--coral-deep); font-variant-numeric: tabular-nums; }
@@ -233,7 +237,7 @@ select { appearance: none; border: 0; outline: 0; padding: 9px 25px 9px 10px; bo
 .topics-none { color: var(--ink-faint); font-size: 9px; }
 .prow .link-mini { display: inline-block; margin-right: 5px; padding: 5px 8px; border-radius: 7px; font-size: 8.5px; font-weight: 800; background: var(--canvas-deep); color: var(--ink-soft); text-decoration: none; white-space: nowrap; }
 .prow .link-mini:hover { color: var(--coral-deep); }
-.pot-head { display: grid; grid-template-columns: 1.5fr .8fr 1.4fr 1fr 1fr .95fr auto; gap: 10px; }
+.pot-head { display: grid; grid-template-columns: 1.5fr .8fr .9fr 1.4fr 1fr 1fr .95fr auto; gap: 10px; }
 .th-sort { background: none; padding: 0; border: 0; color: inherit; font: inherit; text-transform: inherit; letter-spacing: inherit; font-weight: inherit; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; text-align: left; }
 .th-sort:hover { color: var(--coral-deep); }
 .th-sort .arr { color: var(--ink-faint); font-size: 8px; display: inline-flex; gap: 1px; }
@@ -436,10 +440,10 @@ const state = {
   chains: new Set(CHAINS),
   maxAgeH: '24', minLiq: '0', minVol: '1000', sort: 'new',
   verifiedOnly: true,
-  social: { google: [], x: [], biz: [], fetchedAt: {}, errors: [] },
+  social: { google: [], x: [], biz: [], news: [], fetchedAt: {}, errors: [] },
   trending: [], trendSafe: {},
   potential: [], potentialLoading: false, potentialError: '', potentialAge: '60-1440',
-  potSort: [{ k: 'age', dir: 1 }],   // multi-sort: [{k, dir}] — index 0 = prioritas utama
+  potSort: [{ k: 'score', dir: -1 }],   // multi-sort: [{k, dir}] — index 0 = prioritas utama (default: momentum tertinggi)
   verify: { loading: false, error: '', token: null, safe: null },
   items: [], found: 0, query: '', removed: 0, searching: false, searchError: '', searched: false,
   safety: {},        // "chain:addr" -> data keamanan (level sudah dihitung)
@@ -503,7 +507,8 @@ function navItem(view, label, iconName, count) {
 function appShell(content) {
   const baru = (state.social.google || []).filter(t => isNewOnRadar(t.firstSeen)).length +
     (state.social.x || []).filter(t => isNewOnRadar(t.firstSeen)).length +
-    (state.social.biz || []).filter(t => isNewOnRadar(t.firstSeen)).length;
+    (state.social.biz || []).filter(t => isNewOnRadar(t.firstSeen)).length +
+    (state.social.news || []).filter(t => isNewOnRadar(t.firstSeen)).length;
   return `<div class="app-shell">
     <aside class="sidebar">
       <div class="brand"><div class="brand-mark"><span></span><span></span></div><span>meme radar</span></div>
@@ -518,7 +523,7 @@ function appShell(content) {
       </nav>
       <div class="sidebar-bottom">
         <div class="warn-card"><p><b>⚠ Bukan saran finansial.</b> 80% token meme mati &lt; 1 hari. Selalu pakai burner wallet, sizing kecil, dan jangan sign sembarangan. "✓ terverifikasi" ≠ bebas rug — soft rug lolos scan.</p></div>
-        <p class="src-note">Data: DexScreener · RugCheck · GoPlus · Google Trends · trends24.in · 4chan /biz/</p>
+        <p class="src-note">Data: DexScreener · RugCheck · GoPlus · Google Trends · trends24.in · 4chan /biz/ · RSS berita crypto</p>
       </div>
     </aside>
     <main class="main-content">
@@ -540,7 +545,7 @@ function pageHeader(eyebrow, title, description, action) {
 
 /* ---------- view: radar social ---------- */
 function kwRowHtml(src, i, kw, meta, url, firstSeen) {
-  const dot = src === 'google' ? 'coral' : src === 'x' ? 'lavender' : 'amber';
+  const dot = src === 'google' ? 'coral' : src === 'x' ? 'lavender' : src === 'news' ? 'mint' : 'amber';
   return `<div class="kw-row">
     <span class="topic-dot ${dot}"></span>
     <button class="kw-btn" data-kw="${src}:${i}" title="cari token narasi ini"><strong>${esc(kw)}</strong><span>${esc(meta.sub || '')}</span></button>
@@ -573,21 +578,28 @@ function radarView() {
     kwRowHtml('biz', i, t.word,
       { sub: 'spam hidup ' + fmtAgo(t.lastSeen), side: '×' + t.count },
       t.thread ? 'https://boards.4channel.org/biz/thread/' + t.thread : null, t.firstSeen)).join('');
+  const n = [...(state.social.news || [])].sort((a2, b2) => (b2.count || 0) - (a2.count || 0)).map((t, i) =>
+    kwRowHtml('news', i, t.word,
+      { sub: t.title || '', side: '×' + t.count + ' berita' },
+      t.url || null, t.firstSeen)).join('');
   const baru = (state.social.google || []).filter(t => isNewOnRadar(t.firstSeen)).length +
     (state.social.x || []).filter(t => isNewOnRadar(t.firstSeen)).length +
-    (state.social.biz || []).filter(t => isNewOnRadar(t.firstSeen)).length;
+    (state.social.biz || []).filter(t => isNewOnRadar(t.firstSeen)).length +
+    (state.social.news || []).filter(t => isNewOnRadar(t.firstSeen)).length;
   const errs = (state.social.errors || []).length ? `<p class="err-line">${esc(state.social.errors.join(' · '))}</p>` : '';
   return `${pageHeader('Sinyal early · sebelum token ada',
     'Tangkap narasi sebelum viral.',
-    'Keyword yang lagi panas di Google Trends, X, dan 4chan /biz/ — biasanya beberapa jam SEBELUM tokennya muncul di dex. Klik keyword untuk langsung mencari tokennya; ikon ↗ membuka bukti di sumber aslinya.',
+    'Keyword yang lagi panas di berita crypto, Google Trends, X, dan 4chan /biz/ — biasanya beberapa jam SEBELUM tokennya muncul di dex. Klik keyword untuk langsung mencari tokennya; ikon ↗ membuka bukti di sumber aslinya.',
     `<button class="soft-button" data-action="refresh-social">${icon('radar', 15)} Segarkan radar</button>`)}
   <div class="metric-grid">
+    <div class="metric-card clay-card"><div class="metric-top"><span>Berita crypto</span><span class="metric-icon mint">${icon('flame', 15)}</span></div><div class="metric-value">${(state.social.news || []).length}</div><div class="metric-footer"><span>narasi crypto</span><span>diperbarui ${at.news ? fmtClock(at.news) : '?'}</span></div></div>
     <div class="metric-card clay-card"><div class="metric-top"><span>Google Trends</span><span class="metric-icon coral">${icon('search', 15)}</span></div><div class="metric-value">${(state.social.google || []).length}</div><div class="metric-footer"><span>momen viral</span><span>diperbarui ${at.google ? fmtClock(at.google) : '?'}</span></div></div>
     <div class="metric-card clay-card"><div class="metric-top"><span>X / Twitter</span><span class="metric-icon lavender">${icon('flame', 15)}</span></div><div class="metric-value">${(state.social.x || []).length}</div><div class="metric-footer"><span>tren AS</span><span>diperbarui ${at.x ? fmtClock(at.x) : '?'}</span></div></div>
     <div class="metric-card clay-card"><div class="metric-top"><span>4chan /biz/</span><span class="metric-icon amber">${icon('flame', 15)}</span></div><div class="metric-value">${(state.social.biz || []).length}</div><div class="metric-footer"><span>kata di-spam</span><span>diperbarui ${at.biz ? fmtClock(at.biz) : '?'}</span></div></div>
     <div class="metric-card clay-card"><div class="metric-top"><span>Baru masuk radar</span><span class="metric-icon mint">${icon('clock', 15)}</span></div><div class="metric-value">${baru}</div><div class="metric-footer"><span>&lt; 30 menit</span><span>narasi baru terbentuk</span></div></div>
   </div>
   <section class="section-block"><div class="radar-grid">
+    ${radarPanel('Berita crypto', 'Istilah yang paling sering muncul di judul berita CoinDesk/Cointelegraph/Decrypt — narasi yang crypto-native, bukan tren politik/selebriti. ×N = jumlah berita yang menyebutnya; klik ↗ untuk judul terakhirnya.', n, at.news)}
     ${radarPanel('Google Trends', 'Momen mainstream — token meme biasanya lahir beberapa jam SETELAH momen ini. Frasa panjang boleh dipangkas di kotak pencarian.', g, at.google)}
     ${radarPanel('X / Twitter', 'Hashtag/nama yang paling banyak di-tweet di X sekarang — scraping via trends24.in.', x, at.x)}
     ${radarPanel('4chan /biz/', '×N = jumlah penyebutan · "spam hidup" = post terakhir yang menyebutnya. <b>BARU</b> = keyword baru masuk radar &lt; 30 menit — narasi yang baru mulai terbentuk. Ini lantai shill paling awal.', b, at.biz)}
@@ -729,6 +741,7 @@ function screenerView() {
 const POT_COLS = [
   ['token', 'Token', t => String(t.symbol || '').toLowerCase(), 1],
   ['age', 'Umur', t => (t.ageHours ?? 1e9), 1],
+  ['score', 'Momentum', t => (t.score ?? -1), -1],
   ['topics', 'Topik panas', t => (t.topics || []).length, -1],
   ['mc', 'MC / liq', t => (t.mc || t.liq || 0), -1],
   ['vol', 'Vol / B-S', t => (t.vol24h || 0), -1],
@@ -747,7 +760,7 @@ function sortPotential(items) {
   return sorted;
 }
 function potSortLabel() {
-  const SUP = ['¹', '²', '³', '⁴', '⁵', '⁶'];
+  const SUP = ['¹', '²', '³', '⁴', '⁵', '⁶', '⁷'];
   return state.potSort.map(({ k, dir }, i) => {
     const label = (POT_COLS.find(c => c[0] === k) || ['', '?'])[1];
     return `${label} ${dir === 1 ? '▲' : '▼'}${SUP[i] || ''}`;
@@ -772,7 +785,7 @@ function togglePotSort(id, shift) {
   } else {
     state.potSort[idx].dir *= -1;
   }
-  if (!state.potSort.length) state.potSort = [{ k: 'age', dir: 1 }];
+  if (!state.potSort.length) state.potSort = [{ k: 'score', dir: -1 }];
 }
 function potentialRowHtml(t) {
   const topics = (t.topics || []).length
@@ -780,6 +793,8 @@ function potentialRowHtml(t) {
     : `<span class="topics-none">—</span>`;
   const ageH = t.ageHours;
   const ageCls = ageH != null && ageH < 0.25 ? '⚡ baru lahir' : ageH != null && ageH < 6 ? '⚡ <6 jam' : ageH != null && ageH < 24 ? '⚡ early' : 'baru';
+  const sc = t.score ?? 0;
+  const momLbl = sc >= 15 ? '🔥 panas' : sc >= 8 ? 'hangat' : 'sepi';
   const pill = t.verified === false
     ? `<span class="pill na" title="Terlalu baru — RugCheck/GoPlus belum mengindeks. Bukan berarti aman: verifikasi manual di GMGN dulu.">? belum verif</span>`
     : safetyPill(t.safe);
@@ -789,6 +804,7 @@ function potentialRowHtml(t) {
       <span><strong>${esc(t.symbol)}${chainIcon(t.chain)}</strong><span>${esc(t.name || '')}</span></span>
     </span>
     <span class="age-big">${fmtAge(ageH)}<span>${ageCls}</span></span>
+    <span class="age-big"><strong>${sc.toFixed(1)}</strong><span class="${sc >= 15 ? 'mom-hot' : sc >= 8 ? 'mom-warm' : 'mom-cold'}">${momLbl}</span></span>
     <span>${topics}</span>
     <span class="cell"><strong>${fmtUsd(t.mc)}</strong><span>${t.liq ? 'liq ' + fmtUsd(t.liq) : 'curve'}</span></span>
     <span class="cell"><strong>${fmtUsd(t.vol24h)}</strong><span>${t.buys24h ?? '–'}/${t.sells24h ?? '–'} B/S</span></span>
@@ -822,7 +838,7 @@ function potentialView() {
   else body = shown.map(potentialRowHtml).join('');
   return `${pageHeader('Aman · muda · early',
     'Token potensial, paling early.',
-    'Token paling baru — mulai dari pool yang baru lahir 1-2 menit. Yang gagal cek rug (BAHAYA/RISIKO) tidak pernah ditampilkan; yang terlalu baru untuk diverifikasi tampil dengan tanda "? belum verif". Urut paling muda dulu; tag 🔥 = berkaitan topik panas di radar.',
+    'Token paling baru — mulai dari pool yang baru lahir 1-2 menit. Yang gagal cek rug (BAHAYA/RISIKO) tidak pernah ditampilkan; yang terlalu baru untuk diverifikasi tampil dengan tanda "? belum verif". Diurut MOMENTUM tertinggi dulu (bukan paling muda) — token baru yang sepi tenggelam, yang lagi bergerak naik ke atas; tag 🔥 = berkaitan topik panas di radar.',
     `<button class="soft-button" data-action="refresh-potential">${icon('radar', 15)} Segarkan</button>`)}
   <div class="filter-row" style="margin-bottom:14px">
     <label class="select-wrap"><select id="potAge">
@@ -950,7 +966,7 @@ function bindEvents() {
   document.querySelectorAll('[data-kw]').forEach(el => el.addEventListener('click', () => {
     const [src, i] = el.dataset.kw.split(':');
     const d = state.social;
-    const kw = src === 'google' ? ((d.google || [])[+i] || {}).title : src === 'x' ? ((d.x || [])[+i] || {}).word : ((d.biz || [])[+i] || {}).word;
+    const kw = src === 'google' ? ((d.google || [])[+i] || {}).title : src === 'x' ? ((d.x || [])[+i] || {}).word : src === 'news' ? ((d.news || [])[+i] || {}).word : ((d.biz || [])[+i] || {}).word;
     if (kw) { state.q = kw; doSearch(); }
   }));
   document.querySelectorAll('[data-trend-search]').forEach(el => el.addEventListener('click', () => {
@@ -976,7 +992,7 @@ function bindEvents() {
     if (action === 'refresh-social') loadSocial(true);
     if (action === 'refresh-trending') loadTrending(true);
     if (action === 'refresh-potential') loadPotential(true);
-    if (action === 'reset-sort') { state.potSort = [{ k: 'age', dir: 1 }]; render(); }
+    if (action === 'reset-sort') { state.potSort = [{ k: 'score', dir: -1 }]; render(); }
     if (action === 'verify-ca') doVerify();
     if (action === 'paste-clip') {
       navigator.clipboard.readText().then(txt => {
