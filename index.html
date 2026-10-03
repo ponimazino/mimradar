@@ -444,7 +444,8 @@ function chainIcon(chain) {
   return CHAIN_SVG[chain] || `<span class="chain-mini">${esc(String(chain || '?').slice(0, 3).toUpperCase())}</span>`;
 }
 const state = {
-  view: 'radar',
+  // menu terakhir tersimpan di URL hash (#potential dst) — F5 tetap di menu itu
+  view: ['radar', 'potential', 'screener', 'verify', 'trending'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'radar',
   q: '',
   chains: new Set(CHAINS),
   maxAgeH: '24', minLiq: '0', minVol: '1000', sort: 'new',
@@ -971,7 +972,11 @@ function render() {
   bindEvents();
 }
 function bindEvents() {
-  document.querySelectorAll('[data-view]').forEach(el => el.addEventListener('click', () => { state.view = el.dataset.view; state.selected = -1; render(); }));
+  document.querySelectorAll('[data-view]').forEach(el => el.addEventListener('click', () => {
+    state.view = el.dataset.view; state.selected = -1;
+    history.replaceState(null, '', '#' + state.view);
+    render();
+  }));
   document.querySelectorAll('[data-kw]').forEach(el => el.addEventListener('click', () => {
     const [src, i] = el.dataset.kw.split(':');
     const d = state.social;
