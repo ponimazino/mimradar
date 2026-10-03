@@ -15,6 +15,7 @@ Dipakai dari dua pintu:
   - api/*.py   : Vercel Python Functions (serverless) — tiap file ekspor class
     `handler` via make_handler(fn) di bawah.
 """
+import calendar
 import html as html_mod
 import inspect
 import json
@@ -423,18 +424,21 @@ SOCIAL_CACHE = {"ts": 0.0, "data": None}
 
 # pool BARU dibuat (umur 1-2 menit) via GeckoTerminal — satu-satunya sumber
 # yang lebih early dari profil/boost DexScreener. Cache 2 menit biar hemat rate limit.
-GECKO_CACHE = {"ts": 0.0, "pools": None}
+# include=base_token sekalian bawa simbol/nama/logo token, tanpa call ekstra.
+GECKO_CACHE = {"ts": 0.0, "pools": None, "toks": None}
 
 
 def gecko_new_pools():
-    """[(chain, token_addr, attrs, pool_addr)] dari feed new_pools, dedup per token
-    (reserve terbesar). Token seumur 90 detik pun bisa muncul di sini."""
+    """([(chain, token_addr, attrs, pool_addr)], {(chain, addr): info token}) dari
+    feed new_pools, dedup per token (reserve terbesar). Token seumur 90 detik
+    pun bisa muncul di sini (terverifikasi: pool umur 12-36 detik ada di feed)."""
     if GECKO_CACHE["pools"] is not None and time.time() - GECKO_CACHE["ts"] < 120:
-        return GECKO_CACHE["pools"]
+        return GECKO_CACHE["pools"], GECKO_CACHE["toks"]
     best = {}
+    toks = {}
     for network in ("solana", "base", "bsc", "ethereum"):
         try:
-            d = fetch_json(f"{GECKO}/networks/{network}/new_pools", timeout=12)
+            d = fetch_json(f"{GECKO}/networks/{network}/new_pools?include=base_token", timeout=12)
         except Exception:
             continue
         for p in d.get("data") or []:
@@ -448,10 +452,22 @@ def gecko_new_pools():
             reserve = float(attrs.get("reserve_in_usd") or 0)
             if key not in best or reserve > best[key][2]:
                 best[key] = (attrs, attrs.get("address") or "", reserve)
+        for t in d.get("included") or []:
+            if t.get("type") != "token":
+                continue
+            ta = t.get("attributes") or {}
+            addr = ta.get("address") or ""
+            if addr:
+                toks[(network, addr)] = {
+                    "image": ta.get("image_url"),
+                    "symbol": ta.get("symbol"),
+                    "name": ta.get("name"),
+                }
     pools = [(c, a, v[0], v[1]) for (c, a), v in best.items()]
     GECKO_CACHE["pools"] = pools
+    GECKO_CACHE["toks"] = toks
     GECKO_CACHE["ts"] = time.time()
-    return pools
+    return pools, toks
 
 
 # trending ORGANIK (algoritma vol/likuiditas nyata — bukan boost bayaran)
@@ -480,15 +496,20 @@ def gecko_trending_pools():
     return keys
 
 
-def gecko_item(chain, address, a, pool_address):
+def gecko_item(chain, address, a, pool_address, tok=None):
     """Bangun item kompatibel pair_item langsung dari atribut pool GeckoTerminal —
-    dipakai untuk token yang BELUM terindeks DexScreener (umur 1-2 menit)."""
+    dipakai untuk token yang BELUM terindeks DexScreener (umur 1-2 menit).
+    tok = info token (logo/simbol/nama) dari include=base_token, kalau ada."""
     created = None
     try:
-        created = int(time.mktime(time.strptime(a.get("pool_created_at") or "", "%Y-%m-%dT%H:%M:%SZ")) * 1000)
+        # timegm, BUKAN mktime: timestamp ini UTC. mktime menganggapnya waktu
+        # lokal, jadi di mesin non-UTC (WIB +7) umur terlihat lebih tua 7 jam.
+        created = int(calendar.timegm(time.strptime(a.get("pool_created_at") or "", "%Y-%m-%dT%H:%M:%SZ")) * 1000)
     except ValueError:
         pass
-    symbol = (a.get("name") or "").split(" / ")[0] or address[:4]
+    tok = tok or {}
+    symbol = tok.get("symbol") or (a.get("name") or "").split(" / ")[0] or address[:4]
+    name = tok.get("name") or symbol
     vol = a.get("volume_usd") or {}
     tx = a.get("transactions") or {}
     t24 = tx.get("h24") or {}
@@ -503,7 +524,7 @@ def gecko_item(chain, address, a, pool_address):
     return {
         "chain": chain,
         "address": address,
-        "name": symbol,
+        "name": name,
         "symbol": symbol,
         "pairUrl": f"https://www.geckoterminal.com/{chain}/pools/{pool_address}",
         "dexId": "pool baru",
@@ -521,7 +542,7 @@ def gecko_item(chain, address, a, pool_address):
         "chg24h": fnum(chg.get("h24")),
         "buys24h": t24.get("buys"),
         "sells24h": t24.get("sells"),
-        "image": None,
+        "image": tok.get("image"),
         "socials": [],
         "gmgn": gmgn_url(chain, address),
     }
@@ -634,7 +655,8 @@ def api_potential():
 
     # 3) pool BARU (umur bisa 1-2 menit) via GeckoTerminal — paling early
     gecko = {}
-    for chain, addr, attrs, pool_addr in gecko_new_pools():
+    gecko_pools, gecko_toks = gecko_new_pools()
+    for chain, addr, attrs, pool_addr in gecko_pools:
         k = (chain, addr)
         if k not in seen:
             seen.add(k)
@@ -662,11 +684,15 @@ def api_potential():
 
     items = []
     for (chain, addr), (p, _liq) in best.items():
-        items.append(pair_item(p, {"description": desc_of.get((chain, addr), "")}))
+        it = pair_item(p, {"description": desc_of.get((chain, addr), "")})
+        if not it.get("image"):
+            # DexScreener belum kasih logo (token terlalu baru) — pakai logo Gecko
+            it["image"] = (gecko_toks.get((chain, addr)) or {}).get("image")
+        items.append(it)
     # token yang belum terindeks DexScreener (terlalu baru) -> bangun dari data gecko
     for k, (attrs, pool_addr) in gecko.items():
         if k not in best:
-            items.append(gecko_item(k[0], k[1], attrs, pool_addr))
+            items.append(gecko_item(k[0], k[1], attrs, pool_addr, gecko_toks.get(k)))
 
     # 5) verifikasi paralel (cache 10 menit) — gagal guard = tidak tampil;
     #    terlalu baru untuk diverifikasi = tampil, tapi ditandai belum verif
