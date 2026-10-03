@@ -443,6 +443,9 @@ const CHAIN_SVG = {
 function chainIcon(chain) {
   return CHAIN_SVG[chain] || `<span class="chain-mini">${esc(String(chain || '?').slice(0, 3).toUpperCase())}</span>`;
 }
+// preferensi per-browser (bisa diblok di private mode — diam-diam pakai default)
+function lsGet(k, fallback) { try { return localStorage.getItem(k) ?? fallback; } catch { return fallback; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch {} }
 const state = {
   // menu terakhir tersimpan di URL hash (#potential dst) — F5 tetap di menu itu
   view: ['radar', 'potential', 'screener', 'verify', 'trending'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'radar',
@@ -452,7 +455,9 @@ const state = {
   verifiedOnly: true,
   social: { google: [], x: [], biz: [], news: [], fetchedAt: {}, errors: [] },
   trending: [], trendSafe: {},
-  potential: [], potentialLoading: false, potentialError: '', potentialAge: '60-1440',
+  // filter umur potensial terakhir tersimpan — F5 tetap di filter itu
+  potential: [], potentialLoading: false, potentialError: '',
+  potentialAge: ['0-1', '1-5', '5-60', '60-1440', 'all'].includes(lsGet('potAge', '')) ? lsGet('potAge', '') : '60-1440',
   potSort: [{ k: 'score', dir: -1 }],   // multi-sort: [{k, dir}] — index 0 = prioritas utama (default: momentum tertinggi)
   verify: { loading: false, error: '', token: null, safe: null },
   items: [], found: 0, query: '', removed: 0, searching: false, searchError: '', searched: false,
@@ -1036,7 +1041,7 @@ function bindEvents() {
     render();
   }));
   const potAge = document.querySelector('#potAge');
-  if (potAge) potAge.addEventListener('change', () => { state.potentialAge = potAge.value; render(); });
+  if (potAge) potAge.addEventListener('change', () => { state.potentialAge = potAge.value; lsSet('potAge', potAge.value); render(); });
 }
 
 async function doVerify() {
