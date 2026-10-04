@@ -60,6 +60,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(lib.api_safety_batch(qs))
             elif path == "/api/verify":
                 self._json(lib.api_verify(qs))
+            elif path == "/api/dev":
+                self._json(lib.api_dev(qs))
             else:
                 self._json({"error": "tidak ada route itu"}, 404)
         except Exception as e:

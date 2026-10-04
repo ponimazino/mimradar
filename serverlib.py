@@ -57,6 +57,14 @@ GMGN_CHAIN = {
     "bsc": "bsc",
 }
 
+# RPC Solana publik (tanpa key) — urutan = prioritas; publicnode menolak UA non-browser
+SOL_RPCS = [
+    "https://api.mainnet-beta.solana.com",
+    "https://solana-rpc.publicnode.com",
+]
+PUMPFUN = "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P"
+WSOL = "So11111111111111111111111111111111111111112"
+
 
 def fetch_json(url, timeout=15):
     req = urllib.request.Request(url, headers=HEADERS)
@@ -969,6 +977,187 @@ def api_safety_batch(qs):
     with ThreadPoolExecutor(max_workers=6) as ex:
         results = list(ex.map(lambda ca: safety_level(*ca), tokens))
     return {"items": {f"{c}:{a}": d for (c, a), d in zip(tokens, results)}}
+
+
+# ---------- dev tracker: watch address pump.fun langsung on-chain ----------
+
+DEV_TTL = 1.5        # cache respons — UI refresh 1s, RPC tidak boleh diburu
+DEV_ENRICH_TTL = 10  # data dex per mint — token muda datanya cepat berubah, tapi 10s cukup
+DEV_CACHE = {}       # address -> (ts, respons)
+DEV_STATE = {}       # address -> {"seen": set(sig), "items": [event]} (hilang saat cold start Vercel)
+DEV_ENRICH = {}      # mint -> (ts, pair dex / None)
+
+
+def sol_rpc(method, params):
+    """JSON-RPC Solana — coba endpoint publik berurutan; 429/5xx lanjut berikutnya."""
+    payload = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params}).encode("utf-8")
+    last = None
+    for url in SOL_RPCS:
+        ua = BROWSER_HEADERS["User-Agent"] if "publicnode" in url else HEADERS["User-Agent"]
+        req = urllib.request.Request(url, data=payload, headers={
+            "Content-Type": "application/json", "User-Agent": ua, "Accept": "application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=20) as r:
+                d = json.loads(r.read().decode("utf-8"))
+            if d.get("error"):
+                raise RuntimeError(d["error"].get("message") or "rpc error")
+            return d["result"]
+        except Exception as e:
+            last = e
+            time.sleep(0.5)
+    raise last
+
+
+_B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+
+
+def b58decode(s):
+    n = 0
+    for c in s:
+        n = n * 58 + _B58.index(c)
+    return n.to_bytes((n.bit_length() + 7) // 8, "big")
+
+
+def parse_create_data(data):
+    """Ix data create pump.fun: disc 8 byte + u32len nama + u32len simbol + u32len uri."""
+    try:
+        b = b58decode(data)[8:]
+        out = []
+        for _ in range(3):
+            ln = int.from_bytes(b[:4], "little")
+            out.append(b[4:4 + ln].decode("utf-8", "replace"))
+            b = b[4 + ln:]
+        return tuple(out)
+    except Exception:
+        return ("", "", "")
+
+
+def classify_pumpfun_tx(tx):
+    """Klasifikasi trx via log program: instruksi hanya dihitung kalau dipancarkan
+    program pump.fun paling luar (program lain juga me-log 'Create'). Return event
+    create (token lahir) / graduate (migrate) atau None."""
+    meta = tx.get("meta") or {}
+    stack, instrs = [], []
+    for line in meta.get("logMessages") or []:
+        m = re.match(r"Program (\S+) invoke \[(\d+)\]", line)
+        if m:
+            stack.append(m.group(1))
+        elif line.startswith("Program ") and (" success" in line or " failed" in line):
+            if stack and line.startswith("Program " + stack[-1]):
+                stack.pop()
+        elif "Program log: Instruction: " in line and stack and stack[-1] == PUMPFUN:
+            instrs.append(line.split("Instruction: ", 1)[1].strip())
+    pick = next((i for i in instrs if i.startswith("Create")), None) \
+        or next((i for i in instrs if i.startswith("Migrate")), None)
+    if not pick:
+        return None
+    inits, cands = [], []   # mint dari initializeMint2; mint dari transferChecked
+    for grp in meta.get("innerInstructions") or []:
+        for ix in grp.get("instructions") or []:
+            p = ix.get("parsed") or {}
+            info = p.get("info") or {}
+            if p.get("type") == "initializeMint2":
+                if info.get("mint"):
+                    inits.append(info["mint"])
+            elif p.get("type") == "transferChecked" and info.get("mint"):
+                cands.append(info["mint"])
+    created = tx.get("blockTime") or 0
+    if pick.startswith("Create"):
+        if not inits:
+            return None
+        data = next((ix.get("data") for ix in (tx.get("transaction") or {}).get("message", {}).get("instructions") or []
+                     if ix.get("programId") == PUMPFUN), "")
+        name, symbol, uri = parse_create_data(data) if data else ("", "", "")
+        return {"kind": "create", "mint": inits[0], "name": name, "symbol": symbol,
+                "uri": uri, "created": created}
+    lp = inits[0] if inits else None
+    meme = next((m for m in cands if m not in (WSOL, lp)), None)
+    if not meme:
+        return None
+    return {"kind": "graduate", "mint": meme, "name": "", "symbol": "", "uri": "", "created": created}
+
+
+def _dev_enriched(items):
+    """Gabung data dex (MC/vol/harga/logo/nama) ke item; token segar kadang belum
+    terindeks → mc None, UI tampil '—'. Cache per mint supaya refresh 1s tidak spam."""
+    now = time.time()
+    todo = [it["mint"] for it in items if not (m := DEV_ENRICH.get(it["mint"])) or now - m[0] >= DEV_ENRICH_TTL]
+    if todo:
+        try:
+            data = fetch_json(f"{DEX}/tokens/v1/solana/" + ",".join(list(dict.fromkeys(todo))[:30])) or []
+        except Exception:
+            data = []
+        by = {}
+        for p in data:
+            a = (p.get("baseToken") or {}).get("address")
+            if not a:
+                continue
+            if a not in by or ((p.get("liquidity") or {}).get("usd") or 0) > ((by[a].get("liquidity") or {}).get("usd") or 0):
+                by[a] = p
+        for mint in dict.fromkeys(todo):
+            DEV_ENRICH[mint] = (now, by.get(mint))
+        if len(DEV_ENRICH) > 500:  # jaga memori instance warm
+            for k in list(DEV_ENRICH)[:-300]:
+                del DEV_ENRICH[k]
+    out = []
+    for it in items:
+        row = dict(it)
+        p = (DEV_ENRICH.get(it["mint"]) or (0, None))[1]
+        if p:
+            d = pair_item(p)
+            row.update({
+                "name": row.get("name") or d["name"], "symbol": row.get("symbol") or d["symbol"],
+                "mc": d["mc"], "vol24h": d["vol24h"], "volM5": d["volRecent"], "priceUsd": d["priceUsd"],
+                "image": d["image"], "pairUrl": d["pairUrl"],
+            })
+        out.append(row)
+    return out
+
+
+def _dev_scan(address, st):
+    try:
+        sigs = sol_rpc("getSignaturesForAddress", [address, {"limit": 15}]) or []
+    except Exception as e:
+        return {"address": address, "items": _dev_enriched(st["items"][:40]), "updated": int(time.time()),
+                "rpcError": f"RPC sibuk ({type(e).__name__}) — data terakhir tetap tampil"}
+    fresh = list(reversed([s["signature"] for s in sigs if s["signature"] not in st["seen"]]))[-10:]
+    for sig in fresh:
+        st["seen"].add(sig)
+        try:
+            tx = sol_rpc("getTransaction", [sig, {"encoding": "jsonParsed", "maxSupportedTransactionVersion": 0}])
+        except Exception:
+            continue
+        time.sleep(0.25)  # jeda antar getTransaction — RPC publik cepat 429 kalau diburst
+        if not tx:
+            continue
+        ev = classify_pumpfun_tx(tx)
+        if ev and all(i.get("mint") != ev["mint"] for i in st["items"]):
+            st["items"].append(ev)
+    if len(st["seen"]) > 400:
+        st["seen"] = set(list(st["seen"])[-250:])
+    st["items"] = sorted(st["items"], key=lambda i: i["created"], reverse=True)[:40]
+    return {"address": address, "items": _dev_enriched(st["items"]), "updated": int(time.time())}
+
+
+def api_dev(qs):
+    """Dev Tracker: tonton satu address Solana, deteksi event pump.fun on-chain —
+    Create/CreateV2 = token baru lahir (umur 0 detik), Migrate/MigrateV2 =
+    graduation (dana curve ±85 SOL masuk PumpSwap, LP dibakar)."""
+    address = (qs.get("address") or [""])[0].strip()
+    if not address:
+        return {"error": "parameter 'address' wajib"}
+    address = extract_address(address) or address
+    now = time.time()
+    hit = DEV_CACHE.get(address)
+    if hit and now - hit[0] < DEV_TTL:
+        return hit[1]
+    st = DEV_STATE.setdefault(address, {"seen": set(), "items": []})
+    resp = _dev_scan(address, st)
+    for it in resp["items"]:
+        it["chain"] = "solana"
+        it["gmgn"] = gmgn_url("solana", it["mint"])
+    DEV_CACHE[address] = (time.time(), resp)
+    return resp
 
 
 

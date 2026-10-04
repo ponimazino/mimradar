@@ -243,6 +243,9 @@ select { appearance: none; border: 0; outline: 0; padding: 9px 25px 9px 10px; bo
 .th-sort .arr { color: var(--ink-faint); font-size: 8px; display: inline-flex; gap: 1px; }
 .th-sort.active .arr { color: var(--coral-deep); font-weight: 800; }
 
+/* dev tracker — 7 kolom: token, umur, sinyal, MC, vol, keamanan, aksi */
+.dev-table .prow, .dev-table .pot-head { grid-template-columns: 1.6fr .8fr 1.1fr 1.1fr .95fr .95fr auto; }
+
 /* cek CA */
 .verify-input { display: flex; gap: 9px; flex-wrap: wrap; }
 .verify-input input { flex: 1 1 320px; padding: 14px 16px; font-size: 13px; font-weight: 600; font-family: ui-monospace, monospace; background: var(--canvas); color: var(--ink); border: 1px solid var(--line); border-radius: 13px; outline: none; box-shadow: var(--shadow-pressed); }
@@ -333,7 +336,7 @@ select { appearance: none; border: 0; outline: 0; padding: 9px 25px 9px 10px; bo
   .trend-preview-grid { grid-template-columns: 1fr; }
   .detail-rail { padding: 16px; }
   .detail-price strong { font-size: 23px; }
-  .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 63px; background: rgba(248, 244, 237, .96); backdrop-filter: blur(12px); border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(5, 1fr); z-index: 5; padding: 6px 8px 5px; }
+  .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 63px; background: rgba(248, 244, 237, .96); backdrop-filter: blur(12px); border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(6, 1fr); z-index: 5; padding: 6px 8px 5px; }
   .mobile-nav .nav-item { width: auto; height: 48px; padding: 4px 0; flex-direction: column; justify-content: center; gap: 4px; border-radius: 10px; font-size: 8px; }
   .mobile-nav .nav-item > span:not(.nav-icon) { display: block; }
   .mobile-nav .nav-item.active { box-shadow: none; background: var(--red-soft); }
@@ -448,7 +451,7 @@ function lsGet(k, fallback) { try { return localStorage.getItem(k) ?? fallback; 
 function lsSet(k, v) { try { localStorage.setItem(k, v); } catch {} }
 const state = {
   // menu terakhir tersimpan di URL hash (#potential dst) — F5 tetap di menu itu
-  view: ['radar', 'potential', 'screener', 'verify', 'trending'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'radar',
+  view: ['radar', 'potential', 'screener', 'verify', 'trending', 'dev'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'radar',
   q: '',
   chains: new Set(CHAINS),
   maxAgeH: '24', minLiq: '0', minVol: '1000', sort: 'new',
@@ -462,6 +465,8 @@ const state = {
   verify: { loading: false, error: '', token: null, safe: null },
   items: [], found: 0, query: '', removed: 0, searching: false, searchError: '', searched: false,
   safety: {},        // "chain:addr" -> data keamanan (level sudah dihitung)
+  // dev tracker: address terakhir dipantau tersimpan — F5 tetap pantau address itu
+  dev: { addr: lsGet('devAddr', '9C4nRvhhVquCKATjDCx5FKvNS9PNgNqgyWy9AcoDjYv5'), items: [], upd: 0, err: '' },
   selected: -1,
   toast: '',
 };
@@ -514,7 +519,7 @@ function toast(msg) {
 }
 
 /* ---------- shell ---------- */
-const VIEW_LABEL = { radar: 'Radar social', screener: 'Cari token', potential: 'Token potensial', verify: 'Cek CA', trending: 'Trending dex' };
+const VIEW_LABEL = { radar: 'Radar social', screener: 'Cari token', potential: 'Token potensial', verify: 'Cek CA', trending: 'Trending dex', dev: 'Dev Tracker' };
 function navItem(view, label, iconName, count) {
   const c = count != null ? `<span class="nav-count">${count}</span>` : '';
   return `<button class="nav-item ${state.view === view ? 'active' : ''}" data-view="${view}"><span class="nav-icon">${icon(iconName, 18)}</span><span>${label}</span>${c}</button>`;
@@ -534,6 +539,7 @@ function appShell(content) {
         ${navItem('potential', 'Token potensial', 'shield')}
         ${navItem('screener', 'Cari token', 'search')}
         ${navItem('verify', 'Cek CA', 'check')}
+        ${navItem('dev', 'Dev Tracker', 'clock')}
         ${navItem('trending', 'Trending dex', 'flame')}
       </nav>
       <div class="sidebar-bottom">
@@ -551,7 +557,7 @@ function appShell(content) {
       </header>
       ${content}
     </main>
-    <nav class="mobile-nav">${navItem('radar', 'Radar', 'radar')}${navItem('potential', 'Potensial', 'shield')}${navItem('screener', 'Cari', 'search')}${navItem('verify', 'Cek CA', 'check')}${navItem('trending', 'Trend', 'flame')}</nav>
+    <nav class="mobile-nav">${navItem('radar', 'Radar', 'radar')}${navItem('potential', 'Potensial', 'shield')}${navItem('screener', 'Cari', 'search')}${navItem('verify', 'Cek CA', 'check')}${navItem('dev', 'Dev', 'clock')}${navItem('trending', 'Trend', 'flame')}</nav>
   </div>`;
 }
 function pageHeader(eyebrow, title, description, action) {
@@ -941,6 +947,66 @@ function verifyView() {
   ${result}`;
 }
 
+/* ---------- view: dev tracker (sinyal on-chain 1 detik) ---------- */
+function devAgeHtml(created) {
+  const s = Math.max(0, Math.floor(Date.now() / 1000 - (created || 0)));
+  const t = s < 60 ? s + ' dtk' : s < 3600 ? Math.floor(s / 60) + ' mnt' : s < 86400 ? Math.floor(s / 3600) + ' jam' : Math.floor(s / 86400) + ' hari';
+  return `<span class="age-big">${t}<span>umur sinyal</span></span>`;
+}
+function devRowHtml(t) {
+  const kind = t.kind === 'create'
+    ? `<span class="pill good" title="trx Create di pump.fun — token baru lahir umur 0 detik, masih bonding curve">🐣 baru lahir</span>`
+    : `<span class="pill warn" title="trx Migrate — bonding curve penuh, ±85 SOL dari curve masuk pool PumpSwap, LP dibakar permanen (tak bisa ditarik dev)">🎓 graduate</span>`;
+  const s = state.safety['solana:' + t.mint];
+  const pill = s ? safetyPill(s) : `<span class="pill na" title="terlalu baru / belum terindeks RugCheck — cek manual di GMGN dulu">? belum verif</span>`;
+  const sym = t.symbol || t.mint.slice(0, 4) + '…' + t.mint.slice(-4);
+  const mc = t.mc
+    ? `<strong>${fmtUsd(t.mc)}</strong><span>${t.priceUsd != null ? fmtPrice(t.priceUsd) : 'curve'}</span>`
+    : `<strong>—</strong><span>belum terindeks DEX</span>`;
+  return `<div class="prow">
+    <span class="token-identity">${avatarHtml(t)}<span><strong>${esc(sym)}${chainIcon('solana')}</strong><span>${esc(t.name || '(belum terindeks)')}</span></span></span>
+    ${devAgeHtml(t.created)}
+    <span>${kind}</span>
+    <span class="cell">${mc}</span>
+    <span class="cell"><strong>${fmtUsd(t.volM5)}</strong><span>vol 24j ${fmtUsd(t.vol24h)}</span></span>
+    <span class="safe-cell">${pill}</span>
+    <span>
+      <a class="link-mini" href="https://gmgn.ai/solana/token/${esc(t.mint)}" target="_blank" rel="noopener" title="token umur 1-2 menit kadang belum terindeks GMGN (blank gelap ≠ link rusak)">GMGN</a>
+      <a class="link-mini" href="https://pump.fun/coin/${esc(t.mint)}" target="_blank" rel="noopener">pump.fun</a>
+      ${t.pairUrl ? `<a class="link-mini" href="${esc(t.pairUrl)}" target="_blank" rel="noopener">DEX</a>` : ''}
+      <button class="link-mini" data-action="copy-ca" data-addr="${esc(t.mint)}">CA</button>
+    </span>
+  </div>`;
+}
+function devListHtml() {
+  const d = state.dev;
+  if (d.err && !d.items.length) return `<div class="empty-state"><div class="empty-icon">!</div><strong>gagal memuat</strong><p>${esc(d.err)}</p></div>`;
+  if (!d.items.length && d.err) return `<p class="err-line">${esc(d.err)}</p>`;
+  if (!d.items.length) return `<div class="empty-state"><span class="spin"></span><p>memindai trx address… sinyal muncul otomatis beberapa detik setelah token dibuat/migrasi on-chain</p></div>`;
+  return d.items.map(devRowHtml).join('') + (d.err ? `<p class="err-line">${esc(d.err)}</p>` : '');
+}
+function devView() {
+  const d = state.dev;
+  return `${pageHeader('Sinyal on-chain · refresh 1 detik',
+    'Dev Tracker — token baru dari satu address.',
+    'Pantau satu address Solana langsung dari chain via RPC publik. 🐣 Create = token baru lahir umur 0 detik (masih bonding curve — paling early). 🎓 Migrate = graduation: dana curve ±85 SOL masuk pool PumpSwap dan LP dibakar permanen. Token muncul ±2-5 detik setelah trx on-chain.',
+    `<span class="kw-meta" id="dev-upd" style="align-self:center;white-space:nowrap">${d.upd ? 'live · ' + fmtClock(d.upd) : ''}</span>`)}
+  <div class="clay-card verify-card">
+    <div class="verify-input">
+      <input type="text" id="dev-addr" value="${esc(d.addr)}" placeholder="Address wallet Solana (base58 32-44 karakter)" spellcheck="false"/>
+      <button class="primary-button" data-action="dev-set">${icon('radar', 15)} Pantau</button>
+    </div>
+    <p class="verify-hint">Default = bot migrasi pump.fun: feed semua token yang baru graduate (ramai, muncul tiap beberapa menit). Ganti ke address creator asli untuk deteksi token umur 0 detik. Catatan: label "ADD 85 SOL" di GMGN dari address bot = dana bonding curve pindah saat migrasi, bukan uang wallet itu.</p>
+  </div>
+  <section class="section-block">
+    <div class="screener-table clay-card dev-table">
+      <div class="table-head pot-head"><span>Token</span><span>Umur</span><span>Sinyal</span><span>MC / harga</span><span>Vol</span><span>Keamanan</span><span>Aksi</span></div>
+      <div id="dev-list">${devListHtml()}</div>
+      <div class="table-footer"><span>umur dihitung dari trx on-chain (blok), bukan dari indeks dex — paling awal mungkin</span><span class="text-button">graduate = laku di curve, bukan jaminan aman — dev tetap bisa dump di PumpSwap</span></div>
+    </div>
+  </section>`;
+}
+
 /* ---------- view: trending (sinyal terlambat) ---------- */
 function trendingView() {
   const cards = state.trending.map((t, i) => {
@@ -972,7 +1038,7 @@ function trendingView() {
 
 /* ---------- render & events ---------- */
 function render() {
-  const content = state.view === 'screener' ? screenerView() : state.view === 'potential' ? potentialView() : state.view === 'verify' ? verifyView() : state.view === 'trending' ? trendingView() : radarView();
+  const content = state.view === 'screener' ? screenerView() : state.view === 'potential' ? potentialView() : state.view === 'verify' ? verifyView() : state.view === 'trending' ? trendingView() : state.view === 'dev' ? devView() : radarView();
   document.querySelector('#app').innerHTML = appShell(content) + (state.toast ? `<div class="toast">${icon('check', 15)} ${esc(state.toast)}</div>` : '');
   bindEvents();
 }
@@ -1004,6 +1070,7 @@ function bindEvents() {
     render();
   }));
   document.querySelectorAll('[data-action]').forEach(el => el.addEventListener('click', () => {
+    if (el.closest('#dev-list')) return; // baris dev tracker ditangani delegasi #dev-list (ganti tiap detik)
     const action = el.dataset.action;
     if (action === 'search') doSearch();
     if (action === 'toggle-verify') { state.verifiedOnly = !state.verifiedOnly; if (state.searched) doSearch(); else render(); }
@@ -1011,6 +1078,7 @@ function bindEvents() {
     if (action === 'refresh-social') loadSocial(true);
     if (action === 'refresh-trending') loadTrending(true);
     if (action === 'refresh-potential') loadPotential(true);
+    if (action === 'dev-set') setDevAddr();
     if (action === 'reset-sort') { state.potSort = [{ k: 'score', dir: -1 }]; render(); }
     if (action === 'verify-ca') doVerify();
     if (action === 'paste-clip') {
@@ -1036,6 +1104,14 @@ function bindEvents() {
   }
   const ca = document.querySelector('#ca');
   if (ca) ca.addEventListener('keydown', e => { if (e.key === 'Enter') doVerify(); });
+  const devIn = document.querySelector('#dev-addr');
+  if (devIn) devIn.addEventListener('keydown', e => { if (e.key === 'Enter') setDevAddr(); });
+  // baris dev tracker diganti tiap detik via innerHTML — pakai delegasi supaya tombol CA tetap hidup
+  const dl = document.querySelector('#dev-list');
+  if (dl) dl.addEventListener('click', e => {
+    const btn = e.target.closest('[data-action="copy-ca"]');
+    if (btn) navigator.clipboard.writeText(btn.dataset.addr).then(() => toast('Alamat tersalin — verifikasi karakter awal & akhirnya sebelum paste (anti poisoning)'));
+  });
   document.querySelectorAll('[data-sort]').forEach(el => el.addEventListener('click', e => {
     togglePotSort(el.dataset.sort, e.shiftKey);
     render();
@@ -1110,6 +1186,42 @@ async function fetchSafety(t) {
     if (state.view === 'screener' && state.selected >= 0) render();
   } catch (e) { /* diam — pill tetap n/a */ }
 }
+
+/* ---------- dev tracker: polling 1 detik, update terarah (input tidak kehilangan fokus) ---------- */
+async function loadDev() {
+  if (state.view !== 'dev' || !state.dev.addr) return;
+  try {
+    const d = await api('/api/dev?address=' + encodeURIComponent(state.dev.addr));
+    state.dev.items = d.items || [];
+    state.dev.upd = d.updated || Math.floor(Date.now() / 1000);
+    state.dev.err = d.rpcError || '';
+    // pill keamanan: batch tiap ±30 detik untuk mint yang belum ada datanya
+    const spec = state.dev.items.filter(t => !state.safety['solana:' + t.mint]).slice(0, 15).map(t => 'solana:' + t.mint).join(',');
+    if (spec && Date.now() - (loadDev._safeAt || 0) > 30000) {
+      loadDev._safeAt = Date.now();
+      api('/api/safety_batch?t=' + encodeURIComponent(spec))
+        .then(b => { Object.assign(state.safety, b.items || {}); })
+        .catch(() => {});
+    }
+  } catch (e) {
+    state.dev.err = e.message;
+  }
+  if (state.view !== 'dev') return;
+  const el = document.querySelector('#dev-list');
+  if (el) el.innerHTML = devListHtml();  // umur per detik jalan tanpa re-render penuh
+  const stamp = document.querySelector('#dev-upd');
+  if (stamp) stamp.textContent = 'live · ' + fmtClock(state.dev.upd);
+}
+function setDevAddr() {
+  const input = document.querySelector('#dev-addr');
+  const m = ((input ? input.value : '') || '').trim().match(/[1-9A-HJ-NP-Za-km-z]{32,44}/);
+  if (!m) { toast('alamat Solana tidak dikenali — tempel base58 32-44 karakter'); return; }
+  state.dev.addr = m[0];
+  state.dev.items = []; state.dev.upd = 0; state.dev.err = '';
+  lsSet('devAddr', m[0]);
+  render();
+  loadDev();
+}
 async function doSearch() {
   const q = state.q.trim();
   if (!q) { toast('ketik dulu kata kunci narasinya'); return; }
@@ -1163,6 +1275,7 @@ loadSocial(true).then(() => { loadTrending(false); loadPotential(false); });
 setInterval(() => loadSocial(false), 10 * 60 * 1000);
 setInterval(() => loadTrending(false), 15 * 60 * 1000);
 setInterval(() => loadPotential(false), 15 * 60 * 1000);
+setInterval(() => loadDev(), 1000);
 </script>
 </body>
 </html>
