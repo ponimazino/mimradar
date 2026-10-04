@@ -464,6 +464,8 @@ const state = {
   // filter umur potensial terakhir tersimpan — F5 tetap di filter itu
   potential: [], potentialLoading: false, potentialError: '',
   potentialAge: ['0-1', '1-5', '5-60', '60-1440', 'all'].includes(lsGet('potAge', '')) ? lsGet('potAge', '') : '60-1440',
+  // filter chain token potensial (multi-pilih) — tersimpan, F5 tetap; kosong = semua chain
+  potChains: new Set(CHAINS.filter(c => lsGet('potChains', CHAINS.join(',')).split(',').includes(c))),
   potSort: [{ k: 'score', dir: -1 }],   // multi-sort: [{k, dir}] — index 0 = prioritas utama (default: momentum tertinggi)
   verify: { loading: false, error: '', token: null, safe: null },
   items: [], found: 0, query: '', removed: 0, searching: false, searchError: '', searched: false,
@@ -856,9 +858,10 @@ function potentialView() {
     ['all', 'semua umur (≤ 7 hari)', 0, 10080],
   ];
   const bucket = AGE_BUCKETS.find(b => b[0] === state.potentialAge) || AGE_BUCKETS[3];
+  const chSel = state.potChains.size ? state.potChains : null; // kosong = semua chain
   const shown = sortPotential(state.potential.filter(t => {
     const m = (t.ageHours || 0) * 60;
-    return m >= bucket[2] && m < bucket[3];
+    return m >= bucket[2] && m < bucket[3] && (!chSel || chSel.has(t.chain));
   }));
   const nVerif = shown.filter(t => t.verified !== false).length;
   let body;
@@ -874,6 +877,8 @@ function potentialView() {
     <label class="select-wrap"><select id="potAge">
       ${AGE_BUCKETS.map(([v, l]) => `<option value="${v}" ${state.potentialAge === v ? 'selected' : ''}>${l}</option>`).join('')}
     </select></label>
+    <div class="chip-row"><span class="chip-lbl">Chain</span>${CHAINS.map(c =>
+      `<button class="chain-chip ${state.potChains.has(c) ? 'on' : ''}" data-potchain="${c}">${c}</button>`).join('')}</div>
     ${state.potential.length && !state.potentialLoading ? `<span class="kw-meta" style="align-self:center">${nVerif} terverifikasi · ${shown.length - nVerif} belum terverifikasi (terlalu baru)</span>` : ''}
   </div>
   <section class="section-block">
@@ -1076,6 +1081,12 @@ function bindEvents() {
   document.querySelectorAll('[data-chain]').forEach(el => el.addEventListener('click', () => {
     const c = el.dataset.chain;
     state.chains.has(c) ? state.chains.delete(c) : state.chains.add(c);
+    render();
+  }));
+  document.querySelectorAll('[data-potchain]').forEach(el => el.addEventListener('click', () => {
+    const c = el.dataset.potchain;
+    state.potChains.has(c) ? state.potChains.delete(c) : state.potChains.add(c);
+    lsSet('potChains', [...state.potChains].join(','));   // kosong = semua chain
     render();
   }));
   document.querySelectorAll('[data-action]').forEach(el => el.addEventListener('click', () => {
