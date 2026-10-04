@@ -110,6 +110,7 @@ def pair_item(p, meta=None):
         "vol6h": vol.get("h6") or 0,
         "vol1h": vol.get("h1") or 0,
         "volRecent": vol.get("m5") or 0,
+        "vol15m": vol.get("m15") or 0,
         "chg1h": chg.get("h1"),
         "chg6h": chg.get("h6"),
         "chg24h": chg.get("h24"),
@@ -545,6 +546,7 @@ def gecko_item(chain, address, a, pool_address, tok=None):
         "vol6h": fnum(vol.get("h6")) or 0,
         "vol1h": fnum(vol.get("h1")) or 0,
         "volRecent": fnum(vol.get("m15")) or 0,
+        "vol15m": fnum(vol.get("m15")) or 0,
         "chg1h": fnum(chg.get("h1")),
         "chg6h": fnum(chg.get("h6")),
         "chg24h": fnum(chg.get("h24")),
@@ -605,6 +607,35 @@ def momentum_score(it):
         + 4.0 * max(0.0, buy_pressure)
         + 2.0 * len(it.get("topics") or []),
     1)
+
+
+def win_pattern(it):
+    """Tag pola dari studi 5 token profit (4 Okt 2026): token pump.fun yang
+    spike di 50k MC → peak 2.5-3.5x dalam 5-60 menit, lalu -90% < 1 jam.
+    'spike'  : sedang di fase spike awal (kandidat entry, TP 2.5-3x, jangan
+               hold > 60 menit) — umur ≤30 mnt, vol 15 mnt ≥$30k, buys>sells,
+               MC $25k-100k (window entry 5 token studi: 40-70k).
+    'survivor': mirip SIF — MC bertahan ≥$150k, chg 1j & 6j positif,
+                vol 15 mnt ≥$5k (masih aktif — bukan dink sepi).
+                Beda dengan yang mati: pullback dibeli, tak pernah -50% dari peak."""
+    tags = []
+    try:
+        mc = float(it.get("mc") or 0)
+        age = it.get("ageHours")
+        vol15 = float(it.get("vol15m") or 0)
+        chg1h = float(it.get("chg1h") or 0)
+        chg6h = float(it.get("chg6h") or 0)
+    except (TypeError, ValueError):
+        return tags
+    if age is not None and age <= 0.5:
+        if vol15 >= 30000 and 25000 <= mc <= 100000:
+            buys = it.get("buys24h") or 0
+            sells = it.get("sells24h") or 0
+            if buys > sells:
+                tags.append("spike")
+    if mc >= 150000 and chg1h > 0 and chg6h > 50 and vol15 >= 5000:
+        tags.append("survivor")
+    return tags
 
 
 def api_potential():
@@ -725,6 +756,7 @@ def api_potential():
         it["safe"] = s
         it["verified"] = lvl in ("good", "warning")
         it["topics"] = match_topics(it, social)
+        it["pattern"] = win_pattern(it)
         it["score"] = momentum_score(it)
         out.append(it)
 

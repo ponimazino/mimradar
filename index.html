@@ -234,6 +234,9 @@ select { appearance: none; border: 0; outline: 0; padding: 9px 25px 9px 10px; bo
 .prow .age-big { font-size: 12px; font-weight: 800; color: var(--coral-deep); font-variant-numeric: tabular-nums; }
 .prow .age-big span { display: block; margin-top: 3px; font-size: 8px; color: var(--ink-faint); font-weight: 800; text-transform: uppercase; letter-spacing: .5px; }
 .topictag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 99px; font-size: 9px; font-weight: 800; color: var(--coral-deep); background: var(--red-soft); margin: 2px 4px 2px 0; }
+.pattag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 99px; font-size: 9px; font-weight: 800; margin: 2px 6px 2px 0; }
+.pattag.spike { color: #b47a32; background: var(--amber-soft); }
+.pattag.survivor { color: #2f9f7e; background: var(--mint-soft); }
 .topics-none { color: var(--ink-faint); font-size: 9px; }
 .prow .link-mini { display: inline-block; margin-right: 5px; padding: 5px 8px; border-radius: 7px; font-size: 8.5px; font-weight: 800; background: var(--canvas-deep); color: var(--ink-soft); text-decoration: none; white-space: nowrap; }
 .prow .link-mini:hover { color: var(--coral-deep); }
@@ -809,9 +812,15 @@ function togglePotSort(id, shift) {
   if (!state.potSort.length) state.potSort = [{ k: 'score', dir: -1 }];
 }
 function potentialRowHtml(t) {
-  const topics = (t.topics || []).length
-    ? t.topics.map(k => `<span class="topictag">🔥 ${esc(k)}</span>`).join('')
-    : `<span class="topics-none">—</span>`;
+  const patterns = (t.pattern || []).map(p =>
+    p === 'spike'
+      ? '<span class="pattag spike" title="Pola spike-early (studi 5 token profit 4 Okt): umur ≤30 mnt, vol 15 mnt ≥$30k, buys &gt; sells, MC window entry $25k-100k. Historis: peak 2.5-3.5x dalam 5-60 menit lalu -90% — TP cepat, jangan hold &gt; 60 menit.">🚀 spike-early</span>'
+      : '<span class="pattag survivor" title="Pola survivor (mirip SIF): MC bertahan ≥$150k, chg 1j & 6j positif — pullback dibeli, belum pernah -50% dari peak. Kandidat hold lebih lama.">💪 survivor</span>'
+  ).join('');
+  const topics = patterns
+    + ((t.topics || []).length
+      ? t.topics.map(k => `<span class="topictag">🔥 ${esc(k)}</span>`).join('')
+      : (patterns ? '' : '<span class="topics-none">—</span>'));
   const ageH = t.ageHours;
   const ageCls = ageH != null && ageH < 0.25 ? '⚡ baru lahir' : ageH != null && ageH < 6 ? '⚡ <6 jam' : ageH != null && ageH < 24 ? '⚡ early' : 'baru';
   const sc = t.score ?? 0;
@@ -859,7 +868,7 @@ function potentialView() {
   else body = shown.map(potentialRowHtml).join('');
   return `${pageHeader('Aman · muda · early',
     'Token potensial, paling early.',
-    'Token paling baru — mulai dari pool yang baru lahir 1-2 menit. Yang gagal cek rug (BAHAYA/RISIKO) tidak pernah ditampilkan; yang terlalu baru untuk diverifikasi tampil dengan tanda "? belum verif". Diurut MOMENTUM tertinggi dulu (bukan paling muda) — token baru yang sepi tenggelam, yang lagi bergerak naik ke atas; tag 🔥 = berkaitan topik panas di radar.',
+    'Token paling baru — mulai dari pool yang baru lahir 1-2 menit. Yang gagal cek rug (BAHAYA/RISIKO) tidak pernah ditampilkan; yang terlalu baru untuk diverifikasi tampil dengan tanda "? belum verif". Diurut MOMENTUM tertinggi dulu (bukan paling muda) — token baru yang sepi tenggelam, yang lagi bergerak naik ke atas; tag 🔥 = berkaitan topik panas di radar. Tag 🚀 spike-early = pola token profit (umur ≤30 mnt, vol 15 mnt ≥$30k, buys>sells, MC $25k-100k — historis peak 2.5-3.5x lalu kolaps, TP cepat); tag 💪 survivor = MC bertahan ≥$150k & chg 1j/6j positif (kandidat hold lebih lama).',
     `<button class="soft-button" data-action="refresh-potential">${icon('radar', 15)} Segarkan</button>`)}
   <div class="filter-row" style="margin-bottom:14px">
     <label class="select-wrap"><select id="potAge">
